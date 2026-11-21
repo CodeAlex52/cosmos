@@ -122,6 +122,19 @@ const total = posts.length;
 
 <script>
 	import "../lib/app.js";
+
+	// 首页「记录」幕：拉看板的真实天数，读不到就保留占位文字
+	const dayEl = document.getElementById("board-day");
+	if (dayEl) {
+		const tz = -new Date().getTimezoneOffset();
+		fetch(`https://board.664501775.workers.dev/api/state?tz=${tz}`)
+			.then((r) => r.json())
+			.then((d) => {
+				const it = (d.items || []).find((i) => i.kind === "auto" && !i.archived);
+				if (it) dayEl.textContent = `Day ${it.days} / ${it.target}`;
+			})
+			.catch(() => {});
+	}
 </script>
 </body>
 </html>
