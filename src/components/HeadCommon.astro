@@ -1,0 +1,61 @@
+---
+import { getCollection } from "astro:content";
+
+interface Props {
+	title: string;
+	description?: string;
+}
+
+const { title, description = "把好奇心写进星光里" } = Astro.props;
+
+const posts = (await getCollection("posts")).sort(
+	(a, b) => b.data.published.getTime() - a.data.published.getTime(),
+);
+
+const fmt = (d: Date) =>
+	`${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+
+const catMap = new Map<string, number>();
+for (const p of posts) {
+	if (p.data.category) {
+		catMap.set(p.data.category, (catMap.get(p.data.category) || 0) + 1);
+	}
+}
+
+const siteIndex = {
+	posts: posts.map((p) => ({
+		id: p.id,
+		title: p.data.title,
+		category: p.data.category || "",
+		description: p.data.description || "",
+		tags: p.data.tags || [],
+		date: fmt(p.data.published),
+	})),
+	categories: [...catMap.entries()].map(([name, count]) => ({ name, count })),
+};
+
+const siteIndexJson = JSON.stringify(siteIndex).replace(/</g, "\\u003c");
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>{title}</title>
+<meta name="theme-color" content="#05030a" />
+<meta name="description" content={description} />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+	rel="stylesheet"
+	href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&display=swap"
+	media="print"
+	onload="this.media='all'"
+/>
+<noscript>
+	<link
+		rel="stylesheet"
+		href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&display=swap"
+	/>
+</noscript>
+<script is:inline src="/theme.js"></script>
+<script type="application/json" id="site-index" set:html={siteIndexJson} />

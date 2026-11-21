@@ -1,5 +1,8 @@
 ---
 import { getCollection, render } from "astro:content";
+import HeadCommon from "../../components/HeadCommon.astro";
+import Topbar from "../../components/Topbar.astro";
+import CommandPalette from "../../components/CommandPalette.astro";
 import "../../styles/post.css";
 
 export async function getStaticPaths() {
@@ -8,45 +11,65 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
 
 const d = post.data.published;
 const date = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 
-const posts = await getCollection("posts");
+// 字数与阅读耗时估算
+const bodyText = post.body || "";
+const cjkCount = (bodyText.match(/[\u4e00-\u9fa5]/g) || []).length;
+const latinCount = (bodyText.replace(/[\u4e00-\u9fa5]/g, " ").match(/\b\w+\b/g) || []).length;
+const words = cjkCount + latinCount;
+const readMins = Math.max(1, Math.ceil(words / 360));
+
+const tocItems = (headings || []).filter((h) => h.depth === 2 || h.depth === 3);
+
+const posts = (await getCollection("posts")).sort(
+	(a, b) => b.data.published.getTime() - a.data.published.getTime(),
+);
 const idx = posts.findIndex((p) => p.id === post.id);
-const prev = posts[idx - 1];
-const next = posts[idx + 1];
+const prev = idx > 0 ? posts[idx - 1] : null;
+const next = idx >= 0 && idx < posts.length - 1 ? posts[idx + 1] : null;
 ---
 
 <!doctype html>
 <html lang="zh-CN">
 <head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-	<title>{post.data.title} · Alex 的小宇宙</title>
-	<meta name="theme-color" content="#05030a" />
-	{post.data.description && <meta name="description" content={post.data.description} />}
-	<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-	<script is:inline src="/theme.js"></script>
+	<HeadCommon
+		title={`${post.data.title} · Alex 的小宇宙`}
+		description={post.data.description || "把好奇心写进星光里"}
+	/>
 </head>
-<body class="post-body">
-	<div class="sky" aria-hidden="true"></div>
+<body class="post-body" data-post-id={post.id}>
+	<canvas id="sky-canvas" aria-hidden="true"></canvas>
 	<div class="glow" aria-hidden="true"></div>
+	<div class="read-progress" id="read-progress" aria-hidden="true"></div>
 
-	<header class="topbar">
-		<a class="brand" href="/">Alex</a>
-		<nav class="nav">
-			<a href="/archive/">归档</a>
-			<a href="/">回到星图</a>
-		</nav>
-	</header>
+	<Topbar mode="inner" />
+
+	{tocItems.length > 0 && (
+		<aside class="toc" aria-label="文章目录">
+			<div class="toc-head">CONTENTS</div>
+			{tocItems.map((h) => (
+				<a class={`toc-link depth-${h.depth}`} href={`#${h.slug}`}>
+					{h.text}
+				</a>
+			))}
+		</aside>
+	)}
 
 	<article class="article">
 		<p class="eyebrow">
-			{post.data.category && <span>{post.data.category}</span>}
+			{post.data.category && (
+				<a class="cat-badge" href={`/categories/${encodeURIComponent(post.data.category)}/`} data-cursor="EXPLORE">
+					{post.data.category}
+				</a>
+			)}
 			<span class="dot">·</span>
 			<span>{date}</span>
+			<span class="dot">·</span>
+			<span>约 {readMins} 分钟 · {words} 字</span>
 		</p>
 
 		<h1>{post.data.title}</h1>
@@ -55,23 +78,226 @@ const next = posts[idx + 1];
 
 		{post.data.tags?.length > 0 && (
 			<div class="tagrow">
-				{post.data.tags.map((t) => <span class="chip">{t}</span>)}
+				{post.data.tags.map((t) => <span class="chip">#{t}</span>)}
 			</div>
+		)}
+
+		{post.data.image && (
+			<figure class="hero-frame" data-spotlight data-tilt="off">
+				<span class="corner tl" aria-hidden="true"></span>
+				<span class="corner tr" aria-hidden="true"></span>
+				<span class="corner bl" aria-hidden="true"></span>
+				<span class="corner br" aria-hidden="true"></span>
+				<img
+					src={post.data.image}
+					alt={post.data.title}
+					data-lightbox-src={post.data.image}
+					data-cursor="VIEW"
+				/>
+				<figcaption class="hero-caption">
+					<span>OPTICAL PLATE · 01</span>
+					<span>CLICK TO INSPECT</span>
+				</figcaption>
+			</figure>
 		)}
 
 		<div class="rule"></div>
 
-		<div class="prose">
+		<div class="prose" id="prose">
 			<Content />
 		</div>
 
-		<footer class="foot">
-			<div class="foot-links">
-				{prev && <a href={`/posts/${prev.id}/`}>← {prev.data.title}</a>}
-				{next && <a class="right" href={`/posts/${next.id}/`}>{next.data.title} →</a>}
+		<section class="starlight-wrap" data-spotlight data-tilt="off">
+			<div class="sl-copy">
+				<span class="sl-title">星光共鸣</span>
+				<span class="sl-sub" id="sl-sub">如果这段文字曾照亮过你的一瞬，为它点亮一颗星。</span>
 			</div>
-			<a class="back" href="/">回到星图</a>
+			<button type="button" class="starlight-btn" id="starlight-btn" data-magnetic data-cursor="PULSE">
+				<span aria-hidden="true">✦</span>
+				<span id="sl-label">点亮一颗星</span>
+				<span id="sl-count">1</span>
+			</button>
+		</section>
+
+		<footer class="foot">
+			{(prev || next) && (
+				<div class="foot-links">
+					{prev && (
+						<a class="foot-card" href={`/posts/${prev.id}/`} data-spotlight data-cursor="READ">
+							<span class="foot-dir">← 上一篇星辰</span>
+							<span class="foot-name">{prev.data.title}</span>
+						</a>
+					)}
+					{next && (
+						<a class="foot-card right" href={`/posts/${next.id}/`} data-spotlight data-cursor="READ">
+							<span class="foot-dir">下一篇星辰 →</span>
+							<span class="foot-name">{next.data.title}</span>
+						</a>
+					)}
+				</div>
+			)}
+
+			<div class="foot-bottom">
+				<a class="back" href="/archive/">← 全部归档</a>
+				<a class="back" href="/">回到星图 →</a>
+			</div>
 		</footer>
 	</article>
+
+	<div class="lightbox" id="lightbox" aria-hidden="true" role="dialog" aria-modal="true">
+		<button type="button" class="lb-close" id="lb-close">CLOSE · ESC</button>
+		<img id="lb-img" src="" alt="" />
+	</div>
+
+	<script>
+		import "../../lib/sky.js";
+		import { cosmosAudio } from "../../lib/audio.js";
+
+		// 1. 阅读进度条
+		const prog = document.getElementById("read-progress");
+		function updateReadProgress() {
+			if (!prog) return;
+			const max = document.documentElement.scrollHeight - window.innerHeight;
+			const pct = max > 0 ? Math.min(100, Math.max(0, (window.scrollY / max) * 100)) : 0;
+			prog.style.width = `${pct.toFixed(2)}%`;
+		}
+		window.addEventListener("scroll", updateReadProgress, { passive: true });
+		updateReadProgress();
+
+		// 2. 目录高亮同步
+		const tocLinks = [...document.querySelectorAll(".toc-link")];
+		const headings = tocLinks
+			.map((a) => {
+				const id = (a.getAttribute("href") || "").slice(1);
+				return { a, el: id ? document.getElementById(id) : null };
+			})
+			.filter((x) => x.el);
+
+		if (headings.length && "IntersectionObserver" in window) {
+			const io = new IntersectionObserver(
+				(entries) => {
+					entries.forEach((ent) => {
+						if (ent.isIntersecting) {
+							tocLinks.forEach((l) => l.classList.remove("is-active"));
+							const match = headings.find((h) => h.el === ent.target);
+							match?.a.classList.add("is-active");
+						}
+					});
+				},
+				{ rootMargin: "-18% 0px -68% 0px" },
+			);
+			headings.forEach((h) => h.el && io.observe(h.el));
+			tocLinks[0]?.classList.add("is-active");
+		}
+
+		// 3. 代码块自动注入 COPY 按钮
+		document.querySelectorAll(".prose pre").forEach((pre) => {
+			const btn = document.createElement("button");
+			btn.type = "button";
+			btn.className = "copy-btn";
+			btn.textContent = "COPY";
+			btn.addEventListener("click", async () => {
+				const code = pre.querySelector("code")?.textContent || pre.textContent || "";
+				try {
+					await navigator.clipboard.writeText(code);
+					btn.textContent = "COPIED ✓";
+					cosmosAudio.playClick();
+					setTimeout(() => (btn.textContent = "COPY"), 1800);
+				} catch (_) {}
+			});
+			pre.appendChild(btn);
+		});
+
+		// 4. 图片灯箱
+		const lb = document.getElementById("lightbox");
+		const lbImg = document.getElementById("lb-img") as HTMLImageElement | null;
+		const lbClose = document.getElementById("lb-close");
+
+		function openLb(src: string, alt: string) {
+			if (!lb || !lbImg) return;
+			lbImg.src = src;
+			lbImg.alt = alt || "";
+			lb.classList.add("is-open");
+			lb.setAttribute("aria-hidden", "false");
+			cosmosAudio.playClick();
+		}
+
+		function closeLb() {
+			if (!lb) return;
+			lb.classList.remove("is-open");
+			lb.setAttribute("aria-hidden", "true");
+		}
+
+		document.querySelectorAll("[data-lightbox-src], .prose img").forEach((img) => {
+			img.addEventListener("click", () => {
+				const el = img as HTMLImageElement;
+				openLb(el.dataset.lightboxSrc || el.src, el.alt);
+			});
+		});
+
+		lb?.addEventListener("click", (e) => {
+			if (e.target === lb || e.target === lbClose) closeLb();
+		});
+		window.addEventListener("keydown", (e) => {
+			if (e.key === "Escape" && lb?.classList.contains("is-open")) closeLb();
+		});
+
+		// 5. 「点亮一颗星」金粉粒子脉冲
+		const slBtn = document.getElementById("starlight-btn");
+		const slLabel = document.getElementById("sl-label");
+		const slCount = document.getElementById("sl-count");
+		const slSub = document.getElementById("sl-sub");
+		const postId = document.body.dataset.postId || "post";
+		const slKey = `starlight:${postId}`;
+
+		let count = Number(localStorage.getItem(`${slKey}:n`) || 1);
+		let lit = localStorage.getItem(slKey) === "1";
+
+		function syncStarlight() {
+			if (slCount) slCount.textContent = String(count);
+			if (slBtn) slBtn.classList.toggle("is-lit", lit);
+			if (slLabel) slLabel.textContent = lit ? "星光已点亮" : "点亮一颗星";
+			if (slSub && lit) slSub.textContent = "已收到来自你坐标的一束星光回响。";
+		}
+		syncStarlight();
+
+		function burstSparks(cx: number, cy: number) {
+			for (let i = 0; i < 16; i++) {
+				const sp = document.createElement("span");
+				sp.className = "sl-spark";
+				sp.style.left = `${cx}px`;
+				sp.style.top = `${cy}px`;
+				document.body.appendChild(sp);
+				const ang = (i / 16) * Math.PI * 2 + Math.random() * 0.35;
+				const dist = 34 + Math.random() * 54;
+				const anim = sp.animate(
+					[
+						{ transform: "translate(-50%, -50%) scale(1)", opacity: 1 },
+						{
+							transform: `translate(calc(-50% + ${Math.cos(ang) * dist}px), calc(-50% + ${Math.sin(ang) * dist}px)) scale(0)`,
+							opacity: 0,
+						},
+					],
+					{ duration: 680 + Math.random() * 240, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
+				);
+				anim.onfinish = () => sp.remove();
+			}
+		}
+
+		slBtn?.addEventListener("click", () => {
+			if (!lit) {
+				lit = true;
+				count += 1;
+				localStorage.setItem(slKey, "1");
+				localStorage.setItem(`${slKey}:n`, String(count));
+			}
+			syncStarlight();
+			const r = slBtn.getBoundingClientRect();
+			burstSparks(r.left + r.width / 2, r.top + r.height / 2);
+			cosmosAudio.playStarLight();
+		});
+	</script>
+
+	<CommandPalette />
 </body>
 </html>

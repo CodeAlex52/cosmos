@@ -1,5 +1,8 @@
 ---
 import { getCollection } from "astro:content";
+import HeadCommon from "../components/HeadCommon.astro";
+import Topbar from "../components/Topbar.astro";
+import CommandPalette from "../components/CommandPalette.astro";
 import "../styles/cosmos.css";
 
 const posts = (await getCollection("posts")).sort(
@@ -9,67 +12,115 @@ const posts = (await getCollection("posts")).sort(
 const cats = [...new Set(posts.map((p) => p.data.category).filter(Boolean))] as string[];
 const byCat = Object.fromEntries(cats.map((c) => [c, posts.filter((p) => p.data.category === c)]));
 
+const fmtShort = (d: Date) =>
+	`${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+
 const sections: any[] = [
-	{ type: "home" },
-	...cats.map((c) => ({ type: "cat", name: c, items: byCat[c] })),
-	{ type: "board" },
-	{ type: "about" },
+	{ type: "home", sector: "ORIGIN · SOL" },
+	...cats.map((c, idx) => ({
+		type: "cat",
+		name: c,
+		items: byCat[c],
+		sector: `SECTOR · ${String(idx + 1).padStart(2, "0")}`,
+	})),
+	{ type: "board", sector: "LOG · HABIT" },
+	{ type: "about", sector: "SIGNAL · ALEX" },
 ];
 
 const total = posts.length;
+
+const cosmosData = {
+	categories: Object.fromEntries(
+		cats.map((c) => [
+			c,
+			byCat[c].map((p) => ({
+				id: p.id,
+				title: p.data.title,
+				date: fmtShort(p.data.published),
+			})),
+		]),
+	),
+};
+
+const cosmosDataJson = JSON.stringify(cosmosData).replace(/</g, "\\u003c");
 ---
 
 <!doctype html>
 <html lang="zh-CN">
 <head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-	<title>Alex 的小宇宙</title>
-	<meta name="theme-color" content="#05030a" />
-	<meta name="description" content="把好奇心写进星光里" />
-	<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-	<script is:inline src="/theme.js"></script>
+	<HeadCommon title="Alex 的小宇宙" description="把好奇心写进星光里" />
 </head>
 <body>
 
 <canvas id="gl"></canvas>
-<div class="veil"></div>
+<div class="veil" aria-hidden="true"></div>
 
-<header class="topbar">
-	<a class="brand" href="/">Alex</a>
-	<nav class="nav">
-		<a href="#stop-1">博客</a>
-		<a href="https://board.664501775.workers.dev" target="_blank" rel="noopener">记录</a>
-		<a href="#stop-{sections.length - 1}">关于</a>
-	</nav>
-</header>
+<Topbar mode="home" aboutStopIndex={sections.length - 1} />
+
+<div class="beacons" id="beacons"></div>
 
 <main class="stops" id="stops">
 	{sections.map((s, i) => (
-		<section class="stop" data-i={i} id={`stop-${i}`}>
+		<section
+			class={`stop ${i === 0 ? "is-in" : ""}`}
+			data-i={i}
+			data-sector={s.sector}
+			data-cat={s.type === "cat" ? s.name : ""}
+			id={`stop-${i}`}
+		>
 			{s.type === "home" && (
 				<div class="info">
-					<p class="eyebrow"><span id="phase">今晚 · 盈凸月</span></p>
+					<p class="eyebrow">
+						<span id="phase" data-decode>今晚 · 盈凸月</span>
+						<span class="dot">·</span>
+						<span>OBSERVATORY</span>
+					</p>
 					<h1>Alex 的小宇宙</h1>
 					<p class="lede">把好奇心写进星光里</p>
-					<p class="quote">你看见的每一颗星，都是它很久以前发出的光。<br />这里的字也一样——写下它们的那个我，已经走远了。</p>
+					<p class="quote">
+						你看见的每一颗星，都是它很久以前发出的光。<br />
+						这里的字也一样——写下它们的那个我，已经走远了。
+					</p>
+					<div class="hero-actions">
+						<a class="cta-glass" href="#stop-1" data-magnetic data-cursor="WARP">
+							<span>潜入星海</span>
+							<span aria-hidden="true">↓</span>
+						</a>
+						<span class="cta-note">点击星海可触发超新星脉冲</span>
+					</div>
 				</div>
 			)}
 
 			{s.type === "cat" && (
 				<div class="info">
-					<p class="eyebrow"><span class="num">{String(i).padStart(2, "0")}</span> 博客 <span class="dot">·</span> {s.items.length} 篇</p>
-					<h2><a class="catlink" href={`/categories/${s.name}/`}>{s.name}</a></h2>
-					<p class="latin">{s.items.length} 颗星</p>
+					<p class="eyebrow">
+						<span class="num">{String(i).padStart(2, "0")}</span>
+						<span>博客</span>
+						<span class="dot">·</span>
+						<span data-decode>{s.items.length} 篇星辰</span>
+					</p>
+					<h2>
+						<a class="catlink" href={`/categories/${encodeURIComponent(s.name)}/`} data-cursor="EXPLORE">
+							{s.name}
+						</a>
+					</h2>
+					<p class="latin">{s.items.length} Constellation{s.items.length > 1 ? "s" : ""}</p>
 					<p class="desc">
 						{s.items.length
-							? `${s.name}——这里收着与它相关的每一次思考。`
-							: "这个星区还在形成中。"}
+							? `${s.name}——这里收着与它相关的每一次思考与回响。`
+							: "这个星区还在缓慢坍缩成形中。"}
 					</p>
-					{s.items[0] && (
-						<div class="latest">
-							<span class="tag">最新</span>
-							<a href={`/posts/${s.items[0].id}/`}>{s.items[0].data.title}</a>
+					{s.items.length > 0 && (
+						<div class="spot-stack">
+							{s.items.slice(0, 2).map((item: any, idx: number) => (
+								<a class="latest-card" href={`/posts/${item.id}/`} data-spotlight data-cursor="READ">
+									<span class="latest-left">
+										<span class="tag">{idx === 0 ? "最新" : fmtShort(item.data.published)}</span>
+										<span class="title">{item.data.title}</span>
+									</span>
+									<span class="latest-arrow" aria-hidden="true">→</span>
+								</a>
+							))}
 						</div>
 					)}
 				</div>
@@ -77,30 +128,78 @@ const total = posts.length;
 
 			{s.type === "board" && (
 				<div class="info">
-					<p class="eyebrow"><span class="num">{String(i).padStart(2, "0")}</span> 记录 <span class="dot">·</span> 进行中</p>
+					<p class="eyebrow">
+						<span class="num">{String(i).padStart(2, "0")}</span>
+						<span>记录</span>
+						<span class="dot">·</span>
+						<span data-decode>进行中</span>
+					</p>
 					<h2>16+8 轻断食</h2>
 					<p class="latin" id="board-day">Day — / 30</p>
-					<p class="desc">日子自己往前走，格子自己会填。</p>
-					<div class="latest">
-						<span class="tag">看板</span>
-						<a href="https://board.664501775.workers.dev" target="_blank" rel="noopener">board · 记录看板 →</a>
+					<p class="desc">日子自己往前走，格子自己会填。每一次微小节律，都在星图外默默推进。</p>
+
+					<div class="board-widget" data-spotlight data-tilt="off">
+						<div class="bw-top">
+							<span class="bw-name" id="bw-name">周期刻度</span>
+							<span class="bw-pct" id="bw-pct">SYNCING</span>
+						</div>
+						<div class="bw-bar" id="bw-bar" style="--n: 30">
+							<div class="bw-fill" id="bw-fill"></div>
+							<div class="bw-ticks" id="bw-ticks">
+								{Array.from({ length: 30 }).map(() => <i />)}
+							</div>
+						</div>
+						<div class="bw-foot">
+							<span id="bw-start">实时连接记录看板</span>
+							<span id="bw-remain">30 天一轮</span>
+						</div>
+					</div>
+
+					<div class="spot-stack">
+						<a class="latest-card" href="https://board.664501775.workers.dev" target="_blank" rel="noopener" data-spotlight data-cursor="WARP">
+							<span class="latest-left">
+								<span class="tag">看板</span>
+								<span class="title">打开 board · 周期进度看板</span>
+							</span>
+							<span class="latest-arrow" aria-hidden="true">↗</span>
+						</a>
 					</div>
 				</div>
 			)}
 
 			{s.type === "about" && (
 				<div class="info">
-					<p class="eyebrow"><span class="num">{String(i).padStart(2, "0")}</span> 关于</p>
+					<p class="eyebrow">
+						<span class="num">{String(i).padStart(2, "0")}</span>
+						<span>关于</span>
+						<span class="dot">·</span>
+						<span data-decode>SIGNAL</span>
+					</p>
 					<h2>Alex</h2>
 					<p class="latin">AI Application Developer</p>
-					<p class="desc">在做 Agent、写代码，想一些暂时没有答案的问题。</p>
-					<div class="latest">
-						<span class="tag">联系</span>
-						<a href="mailto:suzhe52@foxmail.com">suzhe52@foxmail.com</a>
-					</div>
-					<div class="latest">
-						<span class="tag">全部</span>
-						<a href="/archive/">共 {total} 篇文字 →</a>
+					<p class="desc">在做 Agent、写代码，把好奇心留给未知，想一些暂时没有答案的问题。</p>
+					<div class="spot-stack">
+						<a class="latest-card" href="mailto:suzhe52@foxmail.com" data-spotlight data-cursor="MAIL">
+							<span class="latest-left">
+								<span class="tag">联系</span>
+								<span class="title">suzhe52@foxmail.com</span>
+							</span>
+							<span class="latest-arrow" aria-hidden="true">→</span>
+						</a>
+						<a class="latest-card" href="/archive/" data-spotlight data-cursor="EXPLORE">
+							<span class="latest-left">
+								<span class="tag">全部</span>
+								<span class="title">星图归档 · 共 {total} 篇文字</span>
+							</span>
+							<span class="latest-arrow" aria-hidden="true">→</span>
+						</a>
+						<a class="latest-card" href="/rss.xml" data-spotlight data-cursor="RSS">
+							<span class="latest-left">
+								<span class="tag">订阅</span>
+								<span class="title">RSS 2.0 星际电波</span>
+							</span>
+							<span class="latest-arrow" aria-hidden="true">→</span>
+						</a>
 					</div>
 				</div>
 			)}
@@ -108,34 +207,97 @@ const total = posts.length;
 	))}
 </main>
 
-<aside class="rail" id="rail">
+<aside class="rail" id="rail" aria-label="星区章节导轨">
+	<div class="rail-track" aria-hidden="true"><div class="rail-fill" id="rail-fill"></div></div>
 	{sections.map((s, i) => (
-		<button data-goto={i} aria-label={s.type === "cat" ? s.name : s.type} class={i === 0 ? "on" : ""}><i></i></button>
+		<button
+			type="button"
+			data-goto={i}
+			data-cursor="JUMP"
+			aria-label={s.type === "cat" ? s.name : s.type}
+			class={i === 0 ? "on" : ""}
+		>
+			<i></i>
+			<span class="rail-tip">{s.type === "cat" ? s.name : s.type === "home" ? "星图原点" : s.type === "board" ? "记录看板" : "关于 Alex"}</span>
+		</button>
 	))}
 </aside>
 
+<div class="hud-left" aria-hidden="true">
+	<div class="moon-disc">
+		<svg id="moon-svg" viewBox="0 0 24 24" fill="none">
+			<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="0.9" opacity="0.28" />
+			<path id="moon-lit" fill="currentColor" opacity="0.9" d="M 12 3 A 9 9 0 0 1 12 21 A 4 9 0 0 1 12 3 Z" />
+		</svg>
+	</div>
+	<div class="hud-meta">
+		<div class="hud-row">
+			<span class="hud-val is-gold" id="hud-sector">ORIGIN · SOL</span>
+			<span class="hud-val" id="hud-phase">盈凸月</span>
+			<span class="hud-val" id="hud-stars">270K</span>
+		</div>
+		<div class="hud-row">
+			<span>RA <span class="hud-val" id="hud-ra">14h 30m</span></span>
+			<span>DEC <span class="hud-val" id="hud-dec">+28.0°</span></span>
+			<span>DIST <span class="hud-val" id="hud-dist">73.4 MLY</span></span>
+		</div>
+	</div>
+</div>
+
+<div class="hud-right">
+	<span class="hud-cues">拖拽旋转 · 点击脉冲 · 长按坍缩 · ⌘K</span>
+	<button type="button" class="cinema-btn" id="cinema-toggle" data-magnetic data-cursor="FOCUS">
+		<span class="cinema-enter-label">纯净探索 · E</span>
+		<span class="cinema-exit-label">退出纯净 · E</span>
+	</button>
+</div>
+
 <div class="hint" id="hint">
-	<span class="hint-text">滚动，穿过星系</span>
+	<span class="hint-text">SCROLL TO TRAVERSE</span>
 	<span class="hint-tick"></span>
 </div>
 
 <div class="progress" id="progress"></div>
 
+<script type="application/json" id="cosmos-data" set:html={cosmosDataJson} />
+
 <script>
 	import "../lib/app.js";
 
-	// 首页「记录」幕：拉看板的真实天数，读不到就保留占位文字
+	// 首页「记录」幕：拉看板的真实天数与进度刻度
 	const dayEl = document.getElementById("board-day");
+	const pctEl = document.getElementById("bw-pct");
+	const fillEl = document.getElementById("bw-fill");
+	const ticksEl = document.getElementById("bw-ticks");
+	const barEl = document.getElementById("bw-bar");
+	const nameEl = document.getElementById("bw-name");
+	const startEl = document.getElementById("bw-start");
+	const remainEl = document.getElementById("bw-remain");
+
 	if (dayEl) {
 		const tz = -new Date().getTimezoneOffset();
 		fetch(`https://board.664501775.workers.dev/api/state?tz=${tz}`)
 			.then((r) => r.json())
 			.then((d) => {
-				const it = (d.items || []).find((i) => i.kind === "auto" && !i.archived);
-				if (it) dayEl.textContent = `Day ${it.days} / ${it.target}`;
+				const it = (d.items || []).find((i: any) => i.kind === "auto" && !i.archived);
+				if (!it) return;
+				dayEl.textContent = `Day ${it.days} / ${it.target}`;
+				const ratio = Math.max(0, Math.min(1, Number(it.ratio || (it.days / Math.max(1, it.target)))));
+				if (nameEl) nameEl.textContent = it.name || "周期刻度";
+				if (pctEl) pctEl.textContent = `${Math.round(ratio * 100)}%`;
+				if (fillEl) fillEl.style.width = `${(ratio * 100).toFixed(2)}%`;
+				const n = Math.max(2, Math.min(Math.round(it.target || 30), 60));
+				if (barEl) barEl.style.setProperty("--n", String(n));
+				if (ticksEl) ticksEl.innerHTML = "<i></i>".repeat(n);
+				if (startEl && it.startedOn) startEl.textContent = `${it.startedOn.slice(5).replace("-", ".")} 起`;
+				if (remainEl) remainEl.textContent = it.remain > 0 ? `还剩 ${it.remain} 天` : `满 ${it.target} 天`;
 			})
-			.catch(() => {});
+			.catch(() => {
+				if (pctEl) pctEl.textContent = "OFFLINE";
+			});
 	}
 </script>
+
+<CommandPalette />
 </body>
 </html>

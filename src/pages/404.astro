@@ -1,29 +1,36 @@
 ---
+import HeadCommon from "../components/HeadCommon.astro";
+import Topbar from "../components/Topbar.astro";
+import CommandPalette from "../components/CommandPalette.astro";
 import "../styles/post.css";
 ---
 
 <!doctype html>
 <html lang="zh-CN">
 <head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>迷失在星际 · Alex 的小宇宙</title>
-	<meta name="theme-color" content="#05030a" />
-	<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-	<script is:inline src="/theme.js"></script>
+	<HeadCommon title="迷失在星际 · Alex 的小宇宙" description="信号越过事件视界，这里没有星" />
 </head>
 <body class="post-body">
-	<div class="sky" aria-hidden="true"></div>
+	<canvas id="sky-canvas" data-mode="blackhole" aria-hidden="true"></canvas>
 	<div class="glow" aria-hidden="true"></div>
-	<header class="topbar">
-		<a class="brand" href="/">Alex</a>
-		<nav class="nav"><a href="/">星图</a></nav>
-	</header>
-	<main class="article">
-		<p class="eyebrow"><span>404</span><span class="dot">·</span><span>Lost in space</span></p>
-		<h1>这里没有星</h1>
-		<p class="sub">你要找的那颗星，可能已经熄灭了，也可能从未在这里亮过。</p>
-		<p style="margin-top:36px"><a class="back" href="/">← 回到星图</a></p>
+
+	<Topbar mode="inner" />
+
+	<main class="void-hero">
+		<div class="void-card" data-spotlight>
+			<p class="eyebrow"><span>404</span><span class="dot">·</span><span data-decode>EVENT HORIZON</span></p>
+			<h1>这里没有星</h1>
+			<p class="sub">你要找的那颗星，可能已经滑落进事件视界，也可能从未在这个星区亮过。</p>
+			<a class="warp-cta" href="/" data-magnetic data-cursor="WARP">
+				<span>← 跃迁回星图</span>
+			</a>
+		</div>
 	</main>
+
+	<script>
+		import "../lib/sky.js";
+	</script>
+
+	<CommandPalette />
 </body>
 </html>

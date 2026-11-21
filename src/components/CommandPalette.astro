@@ -1,0 +1,29 @@
+<div class="cmd-overlay" id="cmd-palette" aria-hidden="true" role="dialog" aria-modal="true" aria-label="宇宙命令面板">
+	<div class="cmd-dialog">
+		<div class="cmd-head">
+			<span class="cmd-mark" aria-hidden="true">✦</span>
+			<input
+				type="text"
+				class="cmd-input"
+				placeholder="搜索文章、星区分类，或执行天文台指令…"
+				autocomplete="off"
+				spellcheck="false"
+			/>
+			<button type="button" class="cmd-esc" data-cmd-close>ESC</button>
+		</div>
+		<div class="cmd-list"></div>
+		<div class="cmd-foot">
+			<span>↑↓ 选择 · ↵ 跃迁 · / 或 ⌘K 呼出</span>
+			<span>COSMOS OBSERVATORY</span>
+		</div>
+	</div>
+</div>
+
+<div class="celestial-cursor" id="celestial-cursor" aria-hidden="true">
+	<div class="cc-ring"><span class="cc-label"></span></div>
+	<div class="cc-dot"></div>
+</div>
+
+<script>
+	import "../lib/ui.js";
+</script>

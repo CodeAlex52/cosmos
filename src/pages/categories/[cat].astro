@@ -1,5 +1,8 @@
 ---
 import { getCollection } from "astro:content";
+import HeadCommon from "../../components/HeadCommon.astro";
+import Topbar from "../../components/Topbar.astro";
+import CommandPalette from "../../components/CommandPalette.astro";
 import "../../styles/archive.css";
 
 export async function getStaticPaths() {
@@ -12,43 +15,95 @@ const { cat } = Astro.props;
 const posts = (await getCollection("posts"))
 	.filter((p) => p.data.category === cat)
 	.sort((a, b) => b.data.published.getTime() - a.data.published.getTime());
-const fmt = (d: Date) => `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+const fmt = (d: Date) =>
+	`${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 ---
 
 <!doctype html>
 <html lang="zh-CN">
 <head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-	<title>{cat} · Alex 的小宇宙</title>
-	<meta name="theme-color" content="#05030a" />
-	<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-	<script is:inline src="/theme.js"></script>
+	<HeadCommon title={`${cat} · Alex 的小宇宙`} description={`${cat}星区收录的全部文章`} />
 </head>
 <body class="post-body">
-	<div class="sky" aria-hidden="true"></div>
+	<canvas id="sky-canvas" aria-hidden="true"></canvas>
 	<div class="glow" aria-hidden="true"></div>
 
-	<header class="topbar">
-		<a class="brand" href="/">Alex</a>
-		<nav class="nav"><a href="/archive/">归档</a><a href="/">星图</a></nav>
-	</header>
+	<Topbar mode="inner" />
 
 	<main class="article arch">
-		<p class="eyebrow"><span>Category</span><span class="dot">·</span><span>{posts.length} 篇</span></p>
+		<p class="eyebrow"><span>SECTOR</span><span class="dot">·</span><span data-decode>{posts.length} 篇星辰</span></p>
 		<h1>{cat}</h1>
+		<p class="sub">{cat}——这里收着与它相关的每一次观察、推演与记录。</p>
+
 		<div class="rule"></div>
 
-		<ul class="list">
+		<ul class="timeline">
 			{posts.map((p) => (
-				<li>
-					<a href={`/posts/${p.id}/`}>
-						<span class="d">{fmt(p.data.published)}</span>
-						<span class="t">{p.data.title}</span>
+				<li class="arch-item">
+					<a
+						class="arch-card"
+						href={`/posts/${p.id}/`}
+						data-spotlight
+						data-cursor="READ"
+						data-thumb={p.data.image || ""}
+					>
+						<div class="arch-top">
+							<span class="arch-date">{fmt(p.data.published)}</span>
+							<span class="arch-cat">{cat}</span>
+						</div>
+						<h2 class="arch-title">{p.data.title}</h2>
+						{p.data.description && <p class="arch-desc">{p.data.description}</p>}
+						{p.data.tags?.length > 0 && (
+							<div class="arch-tags">
+								{p.data.tags.map((t) => <span>#{t}</span>)}
+							</div>
+						)}
 					</a>
 				</li>
 			))}
 		</ul>
+
+		<div class="foot-bottom" style="margin-top: 56px;">
+			<a class="back" href="/archive/">← 全部归档</a>
+			<a class="back" href="/">回到星图 →</a>
+		</div>
 	</main>
+
+	<div class="thumb-preview" id="thumb-preview" aria-hidden="true">
+		<img id="thumb-img" src="" alt="" />
+	</div>
+
+	<script>
+		import "../../lib/sky.js";
+
+		const preview = document.getElementById("thumb-preview");
+		const previewImg = document.getElementById("thumb-img") as HTMLImageElement | null;
+		let activeThumb = "";
+
+		document.querySelectorAll("[data-thumb]").forEach((card) => {
+			card.addEventListener("pointerenter", () => {
+				const src = card.getAttribute("data-thumb") || "";
+				if (!src || !preview || !previewImg) return;
+				if (activeThumb !== src) {
+					activeThumb = src;
+					previewImg.src = src;
+				}
+				preview.classList.add("is-visible");
+			});
+			card.addEventListener("pointermove", (e: Event) => {
+				const pe = e as PointerEvent;
+				if (!preview || !preview.classList.contains("is-visible")) return;
+				const x = Math.min(window.innerWidth - 240, pe.clientX + 24);
+				const y = Math.min(window.innerHeight - 150, Math.max(80, pe.clientY - 40));
+				preview.style.left = `${x}px`;
+				preview.style.top = `${y}px`;
+			});
+			card.addEventListener("pointerleave", () => {
+				preview?.classList.remove("is-visible");
+			});
+		});
+	</script>
+
+	<CommandPalette />
 </body>
 </html>

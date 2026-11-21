@@ -1,0 +1,567 @@
+/* 全站共享 Chrome：顶栏、天文准星光标、命令面板、声景均衡器、明暗切换、聚光卡片 */
+
+* { box-sizing: border-box; }
+
+/* ---------- 自定义天文十字准星光标 ---------- */
+@media (hover: hover) and (pointer: fine) {
+	html.has-celestial-cursor,
+	html.has-celestial-cursor a,
+	html.has-celestial-cursor button,
+	html.has-celestial-cursor [role="button"] {
+		cursor: none;
+	}
+}
+
+.celestial-cursor {
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.25s ease;
+}
+
+.celestial-cursor.is-visible { opacity: 1; }
+
+.cc-dot {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 5px;
+	height: 5px;
+	margin: -2.5px 0 0 -2.5px;
+	border-radius: 50%;
+	background: var(--gold-hi);
+	box-shadow: 0 0 10px rgba(var(--gold-rgb), 0.85);
+	will-change: transform;
+	transition: transform 0.12s ease, opacity 0.18s ease;
+}
+
+.cc-ring {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 30px;
+	height: 30px;
+	margin: -15px 0 0 -15px;
+	border-radius: 50%;
+	border: 1px solid rgba(var(--gold-rgb), 0.48);
+	will-change: transform;
+	transition:
+		width 0.28s var(--ease-expo),
+		height 0.28s var(--ease-expo),
+		margin 0.28s var(--ease-expo),
+		border-color 0.25s ease,
+		background-color 0.25s ease;
+	display: grid;
+	place-items: center;
+}
+
+.cc-ring::before,
+.cc-ring::after {
+	content: "";
+	position: absolute;
+	background: rgba(var(--gold-rgb), 0.35);
+	transition: opacity 0.25s ease;
+}
+
+.cc-ring::before {
+	width: 1px;
+	height: 6px;
+	top: -4px;
+}
+
+.cc-ring::after {
+	height: 1px;
+	width: 6px;
+	left: -4px;
+}
+
+.cc-label {
+	font-family: var(--mono);
+	font-size: 8.5px;
+	letter-spacing: 0.16em;
+	color: var(--gold-hi);
+	opacity: 0;
+	transform: scale(0.85);
+	transition: opacity 0.2s ease, transform 0.2s ease;
+	white-space: nowrap;
+}
+
+.celestial-cursor.is-hover .cc-ring {
+	width: 44px;
+	height: 44px;
+	margin: -22px 0 0 -22px;
+	border-color: rgba(var(--gold-rgb), 0.85);
+	background: rgba(var(--gold-rgb), 0.08);
+}
+
+.celestial-cursor.is-hover.has-label .cc-ring {
+	width: 56px;
+	height: 56px;
+	margin: -28px 0 0 -28px;
+	background: rgba(var(--void-rgb), 0.62);
+	backdrop-filter: blur(4px);
+}
+
+.celestial-cursor.is-hover.has-label .cc-label {
+	opacity: 1;
+	transform: scale(1);
+}
+
+.celestial-cursor.is-down .cc-ring {
+	width: 22px;
+	height: 22px;
+	margin: -11px 0 0 -11px;
+	border-color: var(--gold-hi);
+	background: rgba(var(--gold-rgb), 0.22);
+}
+
+@media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+	.celestial-cursor { display: none !important; }
+}
+
+/* ---------- 悬浮玻璃顶栏 ---------- */
+.topbar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 30;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 20px clamp(18px, 4.8vw, 52px);
+	pointer-events: none;
+	transition: opacity 0.45s var(--ease-expo), transform 0.45s var(--ease-expo);
+}
+
+.topbar::before {
+	content: "";
+	position: absolute;
+	inset: 0 0 auto 0;
+	height: 88px;
+	background: linear-gradient(to bottom, rgba(var(--void-rgb), 0.72), rgba(var(--void-rgb), 0.22) 55%, transparent);
+	pointer-events: none;
+	z-index: -1;
+}
+
+.topbar a,
+.topbar button {
+	pointer-events: auto;
+}
+
+.brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 13.5px;
+	letter-spacing: 0.28em;
+	color: var(--ink-strong);
+	text-decoration: none;
+	opacity: 0.92;
+	transition: opacity 0.3s, color 0.3s, transform 0.35s var(--ease-expo);
+	flex: none;
+}
+
+.brand:hover {
+	opacity: 1;
+	color: var(--gold-hi);
+}
+
+.brand-orbit {
+	width: 18px;
+	height: 18px;
+	color: var(--gold);
+	flex: none;
+	animation: orbitSpin 18s linear infinite;
+}
+
+@keyframes orbitSpin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}
+
+.nav {
+	display: flex;
+	align-items: center;
+	gap: clamp(12px, 2vw, 26px);
+}
+
+.nav a {
+	position: relative;
+	font-size: 12px;
+	letter-spacing: 0.16em;
+	color: var(--dim);
+	text-decoration: none;
+	transition: color 0.25s, transform 0.3s var(--ease-expo);
+	white-space: nowrap;
+}
+
+.nav a::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: -5px;
+	height: 1px;
+	background: var(--gold);
+	transform: scaleX(0);
+	transform-origin: center;
+	transition: transform 0.3s var(--ease-expo);
+}
+
+.nav a:hover {
+	color: var(--ink-strong);
+}
+
+.nav a:hover::after {
+	transform: scaleX(1);
+}
+
+/* ---------- 顶栏工具胶囊：命令面板 / 声景 / 明暗 ---------- */
+.nav-tools {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin-left: 4px;
+}
+
+.cmd-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	height: 30px;
+	padding: 0 11px;
+	border-radius: 999px;
+	border: 1px solid var(--line-soft);
+	background: var(--glass);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	color: var(--dim);
+	font-family: var(--mono);
+	font-size: 10.5px;
+	letter-spacing: 0.1em;
+	cursor: pointer;
+	transition: border-color 0.25s, color 0.25s, background 0.25s, transform 0.3s var(--ease-expo);
+}
+
+.cmd-pill:hover {
+	color: var(--ink-strong);
+	border-color: var(--line);
+	background: var(--glass-hi);
+}
+
+.cmd-pill-icon {
+	color: var(--gold);
+	font-size: 10.5px;
+}
+
+.audio-btn {
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	border: 1px solid var(--line-soft);
+	background: var(--glass);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 2.2px;
+	cursor: pointer;
+	padding: 0;
+	transition: border-color 0.25s, background 0.25s, transform 0.3s var(--ease-expo);
+}
+
+.audio-btn i {
+	display: block;
+	width: 1.5px;
+	height: 5px;
+	border-radius: 2px;
+	background: var(--dim);
+	transition: background 0.25s, height 0.25s;
+}
+
+.audio-btn:hover {
+	border-color: var(--line);
+	background: var(--glass-hi);
+}
+
+.audio-btn:hover i {
+	background: var(--ink-strong);
+}
+
+.audio-btn.is-on {
+	border-color: rgba(var(--gold-rgb), 0.45);
+}
+
+.audio-btn.is-on i {
+	background: var(--gold-hi);
+	animation: eqBar 1.05s ease-in-out infinite;
+}
+
+.audio-btn.is-on i:nth-child(2) { animation-delay: 0.18s; }
+.audio-btn.is-on i:nth-child(3) { animation-delay: 0.36s; }
+.audio-btn.is-on i:nth-child(4) { animation-delay: 0.1s; }
+
+@keyframes eqBar {
+	0%, 100% { height: 4px; }
+	50% { height: 13px; }
+}
+
+.theme-btn {
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	border: 1px solid var(--line-soft);
+	background: var(--glass);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	color: var(--ink);
+	display: grid;
+	place-items: center;
+	cursor: pointer;
+	padding: 0;
+	transition: border-color 0.25s, background 0.25s, transform 0.45s var(--ease-spring);
+}
+
+.theme-btn:hover {
+	border-color: rgba(var(--gold-rgb), 0.55);
+	background: var(--glass-hi);
+	transform: rotate(22deg);
+}
+
+.theme-btn svg {
+	width: 14px;
+	height: 14px;
+	display: block;
+}
+
+.tb-moon { display: none; }
+html[data-theme="light"] .tb-sun { display: none; }
+html[data-theme="light"] .tb-moon { display: block; }
+
+/* ---------- 聚光灯玻璃卡片 ([data-spotlight]) ---------- */
+[data-spotlight] {
+	position: relative;
+	background: var(--glass);
+	border: 1px solid var(--line-soft);
+	backdrop-filter: blur(14px);
+	-webkit-backdrop-filter: blur(14px);
+	box-shadow: var(--shadow-elev);
+	transition:
+		border-color 0.3s ease,
+		background 0.3s ease,
+		transform 0.4s var(--ease-expo);
+	overflow: hidden;
+}
+
+[data-spotlight]::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	opacity: 0;
+	background: radial-gradient(
+		240px circle at var(--mx, 50%) var(--my, 50%),
+		rgba(var(--gold-rgb), 0.16),
+		transparent 68%
+	);
+	transition: opacity 0.35s ease;
+}
+
+[data-spotlight]:hover {
+	border-color: var(--glass-border);
+	background: var(--glass-hi);
+}
+
+[data-spotlight]:hover::before {
+	opacity: 1;
+}
+
+/* ---------- 宇宙命令面板 (#cmd-palette) ---------- */
+.cmd-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 9000;
+	display: grid;
+	place-items: start center;
+	padding: clamp(56px, 12vh, 120px) 16px 24px;
+	background: rgba(var(--void-rgb), 0.58);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.26s var(--ease-expo);
+}
+
+.cmd-overlay.is-open {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.cmd-dialog {
+	width: 100%;
+	max-width: 560px;
+	border-radius: 14px;
+	border: 1px solid var(--glass-border);
+	background: var(--glass-hi);
+	backdrop-filter: blur(24px);
+	-webkit-backdrop-filter: blur(24px);
+	box-shadow: 0 36px 90px -24px rgba(0, 0, 0, 0.78), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+	overflow: hidden;
+	transform: translateY(10px) scale(0.985);
+	transition: transform 0.3s var(--ease-expo);
+}
+
+.cmd-overlay.is-open .cmd-dialog {
+	transform: translateY(0) scale(1);
+}
+
+.cmd-head {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 15px 18px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.cmd-mark {
+	color: var(--gold);
+	font-size: 14px;
+	flex: none;
+}
+
+.cmd-input {
+	flex: 1;
+	min-width: 0;
+	background: none;
+	border: 0;
+	outline: none;
+	color: var(--ink-strong);
+	font-family: var(--sans);
+	font-size: 14.5px;
+	letter-spacing: 0.02em;
+}
+
+.cmd-input::placeholder {
+	color: var(--faint);
+}
+
+.cmd-esc {
+	font-family: var(--mono);
+	font-size: 10px;
+	letter-spacing: 0.12em;
+	color: var(--faint);
+	border: 1px solid var(--line-soft);
+	border-radius: 6px;
+	padding: 3px 7px;
+	background: none;
+	cursor: pointer;
+}
+
+.cmd-list {
+	max-height: min(56vh, 420px);
+	overflow-y: auto;
+	padding: 8px;
+}
+
+.cmd-group {
+	padding: 10px 10px 4px;
+	font-family: var(--mono);
+	font-size: 10px;
+	letter-spacing: 0.18em;
+	color: var(--gold);
+	opacity: 0.75;
+	text-transform: uppercase;
+}
+
+.cmd-item {
+	width: 100%;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 14px;
+	padding: 10px 12px;
+	border-radius: 9px;
+	text-align: left;
+	cursor: pointer;
+	transition: background 0.18s ease, transform 0.2s var(--ease-expo);
+}
+
+.cmd-item:hover,
+.cmd-item.is-active {
+	background: rgba(var(--gold-rgb), 0.12);
+}
+
+.cmd-main {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.cmd-title {
+	font-size: 14px;
+	color: var(--ink-strong);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.cmd-meta {
+	font-size: 11.5px;
+	color: var(--dim);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.cmd-hint {
+	flex: none;
+	font-family: var(--mono);
+	font-size: 9.5px;
+	letter-spacing: 0.14em;
+	color: var(--gold);
+	opacity: 0.72;
+}
+
+.cmd-empty {
+	padding: 34px 16px;
+	text-align: center;
+	font-size: 13px;
+	color: var(--faint);
+}
+
+.cmd-foot {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 9px 16px;
+	border-top: 1px solid var(--line-soft);
+	font-family: var(--mono);
+	font-size: 10px;
+	letter-spacing: 0.08em;
+	color: var(--faint);
+}
+
+@media (max-width: 600px) {
+	.cmd-pill-txt { display: none; }
+	.cmd-pill { padding: 0 9px; }
+	.nav { gap: 11px; }
+	.nav a { font-size: 11.5px; letter-spacing: 0.1em; }
+	.brand { font-size: 12.5px; letter-spacing: 0.22em; }
+	.cmd-foot { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.brand-orbit { animation: none; }
+	.audio-btn.is-on i { animation: none; height: 10px; }
+	[data-spotlight] { transition: border-color 0.2s ease; }
+}

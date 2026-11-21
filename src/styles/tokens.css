@@ -1,29 +1,101 @@
-/* 全站唯一色板：夜间深空 / 白昼宣纸 */
+/* 全站唯一色板与设计令牌：夜间深空天文台 / 白昼宣纸水墨 */
 :root {
 	--void: #05030a;
+	--void-rgb: 5, 3, 10;
 	--card: #0d0a14;
+	--glass: rgba(13, 10, 22, 0.54);
+	--glass-hi: rgba(24, 19, 40, 0.72);
+	--glass-border: rgba(220, 177, 102, 0.2);
+	--shadow-elev: 0 24px 64px -20px rgba(0, 0, 0, 0.78), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+
 	--ink: #eee9f4;
-	--ink-strong: #f7f3fb;
-	--dim: #a49ab4;
-	--faint: #6e6480;
+	--ink-strong: #f8f5fc;
+	--dim: #a9a0ba;
+	--faint: #6f6582;
+
 	--gold: #dcb166;
-	--gold-hi: #f0cd8a;
-	--line: rgba(220, 177, 102, 0.16);
-	--line-soft: rgba(255, 255, 255, 0.07);
+	--gold-hi: #f2d294;
+	--gold-rgb: 220, 177, 102;
+	--cyan: #8ab8f2;
+	--rose: #e382a2;
+
+	--line: rgba(220, 177, 102, 0.18);
+	--line-soft: rgba(255, 255, 255, 0.08);
+
 	--sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
-	--serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", Georgia, serif;
-	--mono: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+	--serif: "Cormorant Garamond", "Noto Serif SC", "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", Georgia, serif;
+	--mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+
+	--ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
 }
 
 html[data-theme="light"] {
 	--void: #efe9dd;
+	--void-rgb: 239, 233, 221;
 	--card: #f6f1e7;
+	--glass: rgba(246, 241, 231, 0.68);
+	--glass-hi: rgba(252, 248, 240, 0.86);
+	--glass-border: rgba(150, 104, 44, 0.24);
+	--shadow-elev: 0 22px 54px -22px rgba(27, 36, 48, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.55) inset;
+
 	--ink: #1b2430;
 	--ink-strong: #0f1720;
-	--dim: #4b5563;
-	--faint: #85899a;
+	--dim: #4c5664;
+	--faint: #7f8494;
+
 	--gold: #96682c;
-	--gold-hi: #7a5222;
-	--line: rgba(150, 104, 44, 0.2);
+	--gold-hi: #734c1d;
+	--gold-rgb: 150, 104, 44;
+	--cyan: #3a6494;
+	--rose: #a54e68;
+
+	--line: rgba(150, 104, 44, 0.22);
 	--line-soft: rgba(27, 36, 48, 0.1);
+}
+
+/* ---------- 选区与滚动条 ---------- */
+::selection {
+	background: rgba(var(--gold-rgb), 0.28);
+	color: var(--ink-strong);
+}
+
+::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(var(--gold-rgb), 0.22);
+	border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(var(--gold-rgb), 0.44);
+}
+
+/* ---------- View Transitions API 日蚀径向扩散 ---------- */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation: none;
+	mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+	z-index: 1;
+}
+
+::view-transition-new(root) {
+	z-index: 9999;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation: none !important;
+	}
 }

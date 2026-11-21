@@ -1,10 +1,15 @@
 ---
 import { getCollection } from "astro:content";
+import HeadCommon from "../components/HeadCommon.astro";
+import Topbar from "../components/Topbar.astro";
+import CommandPalette from "../components/CommandPalette.astro";
 import "../styles/archive.css";
 
 const posts = (await getCollection("posts")).sort(
 	(a, b) => b.data.published.getTime() - a.data.published.getTime(),
 );
+
+const cats = [...new Set(posts.map((p) => p.data.category).filter(Boolean))] as string[];
 
 const groups = new Map<number, typeof posts>();
 for (const p of posts) {
@@ -19,37 +24,59 @@ const fmt = (d: Date) => `${String(d.getMonth() + 1).padStart(2, "0")}.${String(
 <!doctype html>
 <html lang="zh-CN">
 <head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-	<title>归档 · Alex 的小宇宙</title>
-	<meta name="theme-color" content="#05030a" />
-	<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-	<script is:inline src="/theme.js"></script>
+	<HeadCommon title="归档 · Alex 的小宇宙" description="全部星辰文字与年份时间线" />
 </head>
 <body class="post-body">
-	<div class="sky" aria-hidden="true"></div>
+	<canvas id="sky-canvas" aria-hidden="true"></canvas>
 	<div class="glow" aria-hidden="true"></div>
 
-	<header class="topbar">
-		<a class="brand" href="/">Alex</a>
-		<nav class="nav"><a href="/">星图</a></nav>
-	</header>
+	<Topbar mode="inner" />
 
 	<main class="article arch">
-		<p class="eyebrow"><span>Archive</span><span class="dot">·</span><span>{posts.length} 篇</span></p>
+		<p class="eyebrow"><span>ARCHIVE</span><span class="dot">·</span><span data-decode>{posts.length} 篇星辰</span></p>
 		<h1>全部文字</h1>
+		<p class="sub">沿着时间轨道回望——每一颗落下的光斑，都是一段走过的思想轨迹。</p>
+
+		{cats.length > 0 && (
+			<div class="filter-bar" role="tablist" aria-label="按星区筛选">
+				<button type="button" class="filter-pill is-active" data-filter="all">全部 ({posts.length})</button>
+				{cats.map((c) => {
+					const cnt = posts.filter((p) => p.data.category === c).length;
+					return (
+						<button type="button" class="filter-pill" data-filter={c}>
+							{c} ({cnt})
+						</button>
+					);
+				})}
+			</div>
+		)}
+
 		<div class="rule"></div>
 
 		{years.map((y) => (
-			<section class="year">
-				<h2 class="year-label">{y}<span>{groups.get(y)!.length}</span></h2>
-				<ul class="list">
+			<section class="year" data-year-group>
+				<h2 class="year-label">{y} <span>· {groups.get(y)!.length} 篇</span></h2>
+				<ul class="timeline">
 					{groups.get(y)!.map((p) => (
-						<li>
-							<a href={`/posts/${p.id}/`}>
-								<span class="d">{fmt(p.data.published)}</span>
-								<span class="t">{p.data.title}</span>
-								{p.data.category && <span class="c">{p.data.category}</span>}
+						<li class="arch-item" data-cat={p.data.category || ""}>
+							<a
+								class="arch-card"
+								href={`/posts/${p.id}/`}
+								data-spotlight
+								data-cursor="READ"
+								data-thumb={p.data.image || ""}
+							>
+								<div class="arch-top">
+									<span class="arch-date">{y}.{fmt(p.data.published)}</span>
+									{p.data.category && <span class="arch-cat">{p.data.category}</span>}
+								</div>
+								<h3 class="arch-title">{p.data.title}</h3>
+								{p.data.description && <p class="arch-desc">{p.data.description}</p>}
+								{p.data.tags?.length > 0 && (
+									<div class="arch-tags">
+										{p.data.tags.map((t) => <span>#{t}</span>)}
+									</div>
+								)}
 							</a>
 						</li>
 					))}
@@ -57,5 +84,67 @@ const fmt = (d: Date) => `${String(d.getMonth() + 1).padStart(2, "0")}.${String(
 			</section>
 		))}
 	</main>
+
+	<div class="thumb-preview" id="thumb-preview" aria-hidden="true">
+		<img id="thumb-img" src="" alt="" />
+	</div>
+
+	<script>
+		import "../lib/sky.js";
+		import { cosmosAudio } from "../lib/audio.js";
+
+		// 分类筛选
+		const pills = [...document.querySelectorAll(".filter-pill")];
+		const items = [...document.querySelectorAll(".arch-item")];
+		const yearGroups = [...document.querySelectorAll("[data-year-group]")];
+
+		pills.forEach((btn) => {
+			btn.addEventListener("click", () => {
+				const f = btn.getAttribute("data-filter") || "all";
+				pills.forEach((b) => b.classList.toggle("is-active", b === btn));
+				items.forEach((li) => {
+					const show = f === "all" || li.getAttribute("data-cat") === f;
+					(li as HTMLElement).style.display = show ? "" : "none";
+				});
+				yearGroups.forEach((sec) => {
+					const hasVis = [...sec.querySelectorAll(".arch-item")].some(
+						(el) => (el as HTMLElement).style.display !== "none",
+					);
+					(sec as HTMLElement).style.display = hasVis ? "" : "none";
+				});
+				cosmosAudio.playClick();
+			});
+		});
+
+		// 桌面悬停封面浮窗预览
+		const preview = document.getElementById("thumb-preview");
+		const previewImg = document.getElementById("thumb-img") as HTMLImageElement | null;
+		let activeThumb = "";
+
+		document.querySelectorAll("[data-thumb]").forEach((card) => {
+			card.addEventListener("pointerenter", () => {
+				const src = card.getAttribute("data-thumb") || "";
+				if (!src || !preview || !previewImg) return;
+				if (activeThumb !== src) {
+					activeThumb = src;
+					previewImg.src = src;
+				}
+				preview.classList.add("is-visible");
+			});
+			card.addEventListener("pointermove", (e: Event) => {
+				const pe = e as PointerEvent;
+				if (!preview || !preview.classList.contains("is-visible")) return;
+				const x = Math.min(window.innerWidth - 240, pe.clientX + 24);
+				const y = Math.min(window.innerHeight - 150, Math.max(80, pe.clientY - 40));
+				preview.style.left = `${x}px`;
+				preview.style.top = `${y}px`;
+			});
+			card.addEventListener("pointerleave", () => {
+				preview?.classList.remove("is-visible");
+			});
+		});
+	</script>
+
+	<CommandPalette />
 </body>
 </html>
