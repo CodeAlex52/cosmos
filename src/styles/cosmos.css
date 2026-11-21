@@ -312,3 +312,49 @@ h2 { font-size: clamp(28px, 3.8vw, 48px); }
 
 .catlink { color: inherit; text-decoration: none; transition: opacity .25s; }
 .catlink:hover { opacity: .72; }
+
+/* ---------- 白昼（宣纸星图） ---------- */
+html[data-theme="light"] {
+	--void: #efe9dd;
+	--ink: #1b2430;
+	--dim: #4b5563;
+	--faint: #85899a;
+	--gold: #96682c;
+}
+
+html[data-theme="light"] .veil {
+	background:
+		linear-gradient(100deg, rgba(239, 233, 221, 0.84) 0%, rgba(239, 233, 221, 0.46) 30%, rgba(239, 233, 221, 0) 58%),
+		radial-gradient(140% 90% at 50% 115%, rgba(239, 233, 221, 0.9), transparent 55%),
+		radial-gradient(120% 70% at 50% -20%, rgba(239, 233, 221, 0.85), transparent 60%);
+}
+
+html { transition: background-color .5s ease; }
+body { transition: background-color .5s ease, color .5s ease; }
+
+/* ---------- 明暗按钮 ---------- */
+.theme-btn {
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	border: 1px solid rgba(255, 255, 255, 0.16);
+	background: none;
+	color: var(--ink);
+	display: grid;
+	place-items: center;
+	cursor: pointer;
+	opacity: 0.55;
+	transition: opacity .25s, border-color .25s, transform .35s;
+	padding: 0;
+	pointer-events: auto;
+	margin-left: 2px;
+}
+
+.theme-btn:hover { opacity: 1; border-color: rgba(220, 177, 102, .5); transform: rotate(18deg); }
+.theme-btn svg { width: 15px; height: 15px; display: block; }
+
+html[data-theme="light"] .theme-btn { border-color: rgba(27, 36, 48, 0.2); }
+
+.tb-moon { display: none; }
+html[data-theme="light"] .tb-sun { display: none; }
+html[data-theme="light"] .tb-moon { display: block; }

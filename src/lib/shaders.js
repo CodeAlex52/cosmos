@@ -41,6 +41,7 @@ precision highp float;
 
 in vec3 vColor;
 in float vAlpha;
+uniform float uDaylight;
 out vec4 fragColor;
 
 void main() {
@@ -53,7 +54,14 @@ void main() {
 	a = max(a, 0.0);
 
 	float v = a * vAlpha;
-	fragColor = vec4(vColor * v, v);
+
+	if (uDaylight > 0.5) {
+		// 白昼：星点变成宣纸上的墨痕，保留一点原色相
+		vec3 ink = mix(vec3(0.115, 0.118, 0.132), vColor * 0.58, 0.22);
+		fragColor = vec4(ink, v * 0.84);
+	} else {
+		fragColor = vec4(vColor * v, v);
+	}
 }`;
 
 // 尘埃用正常混合：叠在星系上做暗带

@@ -177,7 +177,7 @@ function uniforms(p, names) {
 	return o;
 }
 
-const uStars = uniforms(progStars, ["uViewProj", "uModel", "uCam", "uPointScale", "uTime", "uFade", "uTwinkle", "uRange"]);
+const uStars = uniforms(progStars, ["uViewProj", "uModel", "uCam", "uPointScale", "uTime", "uFade", "uTwinkle", "uRange", "uDaylight"]);
 const uDust = uniforms(progDust, ["uViewProj", "uModel", "uCam", "uPointScale", "uTime", "uFade", "uTwinkle"]);
 const uBlur = uniforms(progBlur, ["uTex", "uDir", "uThreshold"]);
 const uComp = uniforms(progComp, ["uScene", "uBloom", "uBloomStrength", "uResolution"]);
@@ -379,7 +379,7 @@ addEventListener(
    渲染
    ============================================================ */
 
-function bindPoints(prog, u, mesh, model, cam, pointScale, time, fade, twinkle, range) {
+function bindPoints(prog, u, mesh, model, cam, pointScale, time, fade, twinkle, range, day = 0) {
 	gl.useProgram(prog);
 	gl.uniformMatrix4fv(u.uViewProj, false, VIEWPROJ);
 	gl.uniformMatrix4fv(u.uModel, false, model);
@@ -389,6 +389,7 @@ function bindPoints(prog, u, mesh, model, cam, pointScale, time, fade, twinkle, 
 	gl.uniform1f(u.uFade, fade);
 	gl.uniform1f(u.uTwinkle, twinkle);
 	gl.uniform2f(u.uRange, range[0], range[1]);
+	if (u.uDaylight) gl.uniform1f(u.uDaylight, day);
 	gl.bindVertexArray(mesh.vao);
 	gl.drawArrays(gl.POINTS, 0, mesh.count);
 }
@@ -428,16 +429,21 @@ function render(time) {
 	const pointScale = H * 0.008;
 
 	// ---- 场景 pass ----
-	gl.bindFramebuffer(gl.FRAMEBUFFER, fboScene);
+	const daytime = document.documentElement.dataset.theme === "light";
+	const day = daytime ? 1 : 0;
+
+	gl.bindFramebuffer(gl.FRAMEBUFFER, daytime ? null : fboScene);
 	gl.viewport(0, 0, W, H);
-	gl.clearColor(0.012, 0.008, 0.028, 1);
+	if (daytime) gl.clearColor(0.937, 0.914, 0.863, 1);
+	else gl.clearColor(0.012, 0.008, 0.028, 1);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 
 	gl.enable(gl.BLEND);
-	gl.blendFunc(gl.ONE, gl.ONE); // 加法混合
+	if (daytime) gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+	else gl.blendFunc(gl.ONE, gl.ONE); // 加法混合
 
 	// 远景星空
-	bindPoints(progStars, uStars, stars, M4.model(0, 0, 0, 0, 1), camEase.eye, pointScale, time, 0.8, 0.4, [26, 95]);
+	bindPoints(progStars, uStars, stars, M4.model(0, 0, 0, 0, 1), camEase.eye, pointScale, time, 0.8, 0.4, [26, 95], day);
 
 	// 星系：从远到近画
 	const order = galaxies
@@ -453,12 +459,12 @@ function render(time) {
 		if (fade <= 0.001) continue;
 
 		const model = M4.model(...s.center, g.rot, 1, s.tilt);
-		bindPoints(progStars, uStars, g.light, model, camEase.eye, pointScale, time, fade, 0.22, [7.5, 26]);
+		bindPoints(progStars, uStars, g.light, model, camEase.eye, pointScale, time, fade, 0.22, [7.5, 26], day);
 	}
 
-	// 尘埃：正常混合，压暗旋臂之间
-	gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-	for (const { idx } of order) {
+	// 尘埃：正常混合，压暗旋臂之间（白昼模式不画）
+	if (!daytime) gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+	for (const { idx } of (daytime ? [] : order)) {
 		const g = galaxies[idx];
 		const s = SCENES[idx];
 		const dist = Math.hypot(...s.center.map((c, k) => c - camEase.eye[k]));
@@ -470,6 +476,12 @@ function render(time) {
 
 	gl.disable(gl.BLEND);
 	gl.bindVertexArray(null);
+
+	if (daytime) {
+		gl.bindVertexArray(null);
+		gl.activeTexture(gl.TEXTURE0);
+		return;
+	}
 
 	// ---- bloom ----
 	gl.useProgram(progBlur);
