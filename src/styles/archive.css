@@ -1,0 +1,66 @@
+@import "./post.css";
+
+.arch { padding-bottom: 140px; }
+
+.year { margin-top: 54px; }
+
+.year-label {
+	font-family: var(--mono);
+	font-size: 12px;
+	letter-spacing: .22em;
+	color: var(--faint);
+	font-weight: 400;
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	margin-bottom: 18px;
+}
+
+.year-label span {
+	font-size: 10.5px;
+	color: rgba(232,192,122,.5);
+}
+
+.list { list-style: none; padding: 0; }
+
+.list li + li { border-top: 1px solid rgba(255,255,255,.055); }
+
+.list a {
+	display: grid;
+	grid-template-columns: 52px 1fr auto;
+	align-items: baseline;
+	gap: 16px;
+	padding: 15px 4px;
+	text-decoration: none;
+	color: inherit;
+	transition: background .2s, padding .2s;
+}
+
+.list a:hover { background: rgba(255,255,255,.022); }
+
+.list .d {
+	font-family: var(--mono);
+	font-size: 11.5px;
+	color: var(--faint);
+	letter-spacing: .06em;
+}
+
+.list .t {
+	font-size: 16px;
+	color: #ded8ea;
+	transition: color .2s;
+}
+
+.list a:hover .t { color: var(--gold); }
+
+.list .c {
+	font-family: var(--mono);
+	font-size: 10.5px;
+	color: rgba(232,192,122,.55);
+	letter-spacing: .08em;
+}
+
+@media (max-width: 560px) {
+	.list a { grid-template-columns: 44px 1fr; }
+	.list .c { display: none; }
+}

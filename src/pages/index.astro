@@ -1,0 +1,127 @@
+---
+import { getCollection } from "astro:content";
+import "../styles/cosmos.css";
+
+const posts = (await getCollection("posts")).sort(
+	(a, b) => b.data.published.getTime() - a.data.published.getTime(),
+);
+
+const cats = [...new Set(posts.map((p) => p.data.category).filter(Boolean))] as string[];
+const byCat = Object.fromEntries(cats.map((c) => [c, posts.filter((p) => p.data.category === c)]));
+
+const sections: any[] = [
+	{ type: "home" },
+	...cats.map((c) => ({ type: "cat", name: c, items: byCat[c] })),
+	{ type: "board" },
+	{ type: "about" },
+];
+
+const total = posts.length;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+	<title>苏哲的小宇宙</title>
+	<meta name="theme-color" content="#05030a" />
+	<meta name="description" content="把好奇心写进星光里" />
+	<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+
+<canvas id="gl"></canvas>
+<div class="veil"></div>
+
+<header class="topbar">
+	<a class="brand" href="/">苏哲</a>
+	<nav class="nav">
+		<a href="#stop-1">博客</a>
+		<a href="https://board.664501775.workers.dev" target="_blank" rel="noopener">记录</a>
+		<a href="#stop-{sections.length - 1}">关于</a>
+	</nav>
+</header>
+
+<main class="stops" id="stops">
+	{sections.map((s, i) => (
+		<section class="stop" data-i={i} id={`stop-${i}`}>
+			{s.type === "home" && (
+				<div class="info">
+					<p class="eyebrow"><span id="phase">今晚 · 盈凸月</span></p>
+					<h1>苏哲的小宇宙</h1>
+					<p class="lede">把好奇心写进星光里</p>
+					<p class="quote">你看见的每一颗星，都是它很久以前发出的光。<br />这里的字也一样——写下它们的那个我，已经走远了。</p>
+				</div>
+			)}
+
+			{s.type === "cat" && (
+				<div class="info">
+					<p class="eyebrow"><span class="num">{String(i).padStart(2, "0")}</span> 博客 <span class="dot">·</span> {s.items.length} 篇</p>
+					<h2><a class="catlink" href={`/categories/${s.name}/`}>{s.name}</a></h2>
+					<p class="latin">{s.items.length} 颗星</p>
+					<p class="desc">
+						{s.items.length
+							? `${s.name}——这里收着与它相关的每一次思考。`
+							: "这个星区还在形成中。"}
+					</p>
+					{s.items[0] && (
+						<div class="latest">
+							<span class="tag">最新</span>
+							<a href={`/posts/${s.items[0].id}/`}>{s.items[0].data.title}</a>
+						</div>
+					)}
+				</div>
+			)}
+
+			{s.type === "board" && (
+				<div class="info">
+					<p class="eyebrow"><span class="num">{String(i).padStart(2, "0")}</span> 记录 <span class="dot">·</span> 进行中</p>
+					<h2>16+8 轻断食</h2>
+					<p class="latin" id="board-day">Day — / 30</p>
+					<p class="desc">日子自己往前走，格子自己会填。</p>
+					<div class="latest">
+						<span class="tag">看板</span>
+						<a href="https://board.664501775.workers.dev" target="_blank" rel="noopener">board · 记录看板 →</a>
+					</div>
+				</div>
+			)}
+
+			{s.type === "about" && (
+				<div class="info">
+					<p class="eyebrow"><span class="num">{String(i).padStart(2, "0")}</span> 关于</p>
+					<h2>苏哲</h2>
+					<p class="latin">AI Application Developer</p>
+					<p class="desc">在做 Agent、写代码，想一些暂时没有答案的问题。</p>
+					<div class="latest">
+						<span class="tag">联系</span>
+						<a href="mailto:suzhe52@foxmail.com">suzhe52@foxmail.com</a>
+					</div>
+					<div class="latest">
+						<span class="tag">全部</span>
+						<a href="/archive/">共 {total} 篇文字 →</a>
+					</div>
+				</div>
+			)}
+		</section>
+	))}
+</main>
+
+<aside class="rail" id="rail">
+	{sections.map((s, i) => (
+		<button data-goto={i} aria-label={s.type === "cat" ? s.name : s.type} class={i === 0 ? "on" : ""}><i></i></button>
+	))}
+</aside>
+
+<div class="hint" id="hint">
+	<span class="hint-text">滚动，穿过星系</span>
+	<span class="hint-tick"></span>
+</div>
+
+<div class="progress" id="progress"></div>
+
+<script>
+	import "../lib/app.js";
+</script>
+</body>
+</html>

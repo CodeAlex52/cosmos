@@ -1,0 +1,60 @@
+---
+import { getCollection } from "astro:content";
+import "../styles/archive.css";
+
+const posts = (await getCollection("posts")).sort(
+	(a, b) => b.data.published.getTime() - a.data.published.getTime(),
+);
+
+const groups = new Map<number, typeof posts>();
+for (const p of posts) {
+	const y = p.data.published.getFullYear();
+	if (!groups.has(y)) groups.set(y, []);
+	groups.get(y)!.push(p);
+}
+const years = [...groups.keys()].sort((a, b) => b - a);
+const fmt = (d: Date) => `${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+	<title>归档 · 苏哲的小宇宙</title>
+	<meta name="theme-color" content="#05030a" />
+	<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body class="post-body">
+	<div class="sky" aria-hidden="true"></div>
+	<div class="glow" aria-hidden="true"></div>
+
+	<header class="topbar">
+		<a class="brand" href="/">苏哲</a>
+		<nav class="nav"><a href="/">星图</a></nav>
+	</header>
+
+	<main class="article arch">
+		<p class="eyebrow"><span>Archive</span><span class="dot">·</span><span>{posts.length} 篇</span></p>
+		<h1>全部文字</h1>
+		<div class="rule"></div>
+
+		{years.map((y) => (
+			<section class="year">
+				<h2 class="year-label">{y}<span>{groups.get(y)!.length}</span></h2>
+				<ul class="list">
+					{groups.get(y)!.map((p) => (
+						<li>
+							<a href={`/posts/${p.id}/`}>
+								<span class="d">{fmt(p.data.published)}</span>
+								<span class="t">{p.data.title}</span>
+								{p.data.category && <span class="c">{p.data.category}</span>}
+							</a>
+						</li>
+					))}
+				</ul>
+			</section>
+		))}
+	</main>
+</body>
+</html>

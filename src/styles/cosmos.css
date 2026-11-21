@@ -1,0 +1,314 @@
+:root {
+	--void: #05030a;
+	--ink: #f1ecf8;
+	--dim: #a89cbe;
+	--faint: #6b607f;
+	--gold: #dcb166;
+	--sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+	--serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", Georgia, serif;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+	margin: 0;
+	background: var(--void);
+	color: var(--ink);
+	font-family: var(--sans);
+	-webkit-font-smoothing: antialiased;
+	overflow-x: hidden;
+}
+
+#gl {
+	position: fixed;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	display: block;
+	z-index: 0;
+}
+
+/* 左侧压暗，保证文字可读 */
+.veil {
+	position: fixed;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	background:
+		linear-gradient(100deg, rgba(5, 3, 10, 0.82) 0%, rgba(5, 3, 10, 0.46) 30%, rgba(5, 3, 10, 0) 58%),
+		radial-gradient(140% 90% at 50% 115%, rgba(5, 3, 10, 0.9), transparent 55%),
+		radial-gradient(120% 70% at 50% -20%, rgba(5, 3, 10, 0.85), transparent 60%);
+}
+
+/* ---------- 顶栏 ---------- */
+
+.topbar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 5;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 26px clamp(22px, 5vw, 56px);
+	pointer-events: none;
+}
+
+.topbar a { pointer-events: auto; }
+
+.brand {
+	font-size: 14px;
+	letter-spacing: 0.3em;
+	color: var(--ink);
+	text-decoration: none;
+	opacity: 0.9;
+	transition: opacity 0.3s;
+}
+
+.brand:hover { opacity: 1; }
+
+.nav {
+	display: flex;
+	gap: clamp(16px, 2.4vw, 32px);
+}
+
+.nav a {
+	font-size: 12px;
+	letter-spacing: 0.16em;
+	color: var(--dim);
+	text-decoration: none;
+	transition: color 0.3s;
+}
+
+.nav a:hover { color: var(--ink); }
+
+/* ---------- 场景文字 ---------- */
+
+.stops {
+	position: relative;
+	z-index: 2;
+}
+
+.stop {
+	min-height: 100vh;
+	min-height: 100dvh;
+	display: flex;
+	align-items: center;
+	padding: 0 clamp(22px, 7vw, 104px);
+}
+
+.info {
+	max-width: 430px;
+	opacity: 0;
+	transform: translateY(18px);
+	transition: opacity 1s cubic-bezier(0.2, 0.8, 0.2, 1), transform 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.stop.is-in .info {
+	opacity: 1;
+	transform: none;
+}
+
+.eyebrow {
+	margin: 0 0 22px;
+	font-size: 11px;
+	letter-spacing: 0.24em;
+	color: var(--gold);
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.eyebrow .num {
+	font-variant-numeric: tabular-nums;
+	opacity: 0.75;
+}
+
+.eyebrow .dot { opacity: 0.5; }
+
+h1, h2 {
+	margin: 0;
+	font-family: var(--serif);
+	font-weight: 400;
+	line-height: 1.18;
+	letter-spacing: 0.04em;
+}
+
+h1 { font-size: clamp(34px, 4.5vw, 58px); }
+h2 { font-size: clamp(28px, 3.8vw, 48px); }
+
+.lede {
+	margin: 18px 0 0;
+	font-size: clamp(14px, 1.25vw, 17px);
+	letter-spacing: 0.04em;
+	color: var(--dim);
+}
+
+.quote {
+	margin: 34px 0 0;
+	font-size: 13px;
+	line-height: 2.05;
+	color: var(--faint);
+	letter-spacing: 0.03em;
+}
+
+.latin {
+	margin: 14px 0 0;
+	font-family: var(--serif);
+	font-style: italic;
+	font-size: 13px;
+	letter-spacing: 0.1em;
+	color: var(--gold);
+	opacity: 0.82;
+}
+
+.desc {
+	margin: 26px 0 0;
+	font-size: 14.5px;
+	line-height: 1.95;
+	color: var(--dim);
+	max-width: 372px;
+}
+
+.latest {
+	margin: 30px 0 0;
+	padding-top: 16px;
+	border-top: 1px solid rgba(255, 255, 255, 0.09);
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	font-size: 12.5px;
+}
+
+.latest .tag {
+	flex: none;
+	font-size: 10px;
+	letter-spacing: 0.18em;
+	color: var(--gold);
+	opacity: 0.85;
+}
+
+.latest a {
+	color: var(--ink);
+	text-decoration: none;
+	border-bottom: 1px solid rgba(220, 177, 102, 0.35);
+	padding-bottom: 2px;
+	transition: border-color 0.3s, color 0.3s;
+}
+
+.latest a:hover {
+	color: var(--gold);
+	border-color: var(--gold);
+}
+
+/* ---------- 右侧导航 ---------- */
+
+.rail {
+	position: fixed;
+	right: clamp(16px, 2.6vw, 34px);
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 5;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.rail button {
+	all: unset;
+	cursor: pointer;
+	width: 16px;
+	height: 16px;
+	display: grid;
+	place-items: center;
+}
+
+.rail i {
+	display: block;
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.22);
+	transition: background 0.4s, transform 0.4s, box-shadow 0.4s;
+}
+
+.rail button:hover i { background: rgba(255, 255, 255, 0.5); }
+
+.rail button.on i {
+	background: var(--gold);
+	transform: scale(1.7);
+	box-shadow: 0 0 12px rgba(220, 177, 102, 0.7);
+}
+
+/* ---------- 底部提示 ---------- */
+
+.hint {
+	position: fixed;
+	bottom: 28px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 5;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	pointer-events: none;
+	font-size: 10.5px;
+	letter-spacing: 0.24em;
+	color: var(--faint);
+	transition: opacity 0.6s;
+}
+
+.hint-tick {
+	width: 1px;
+	height: 26px;
+	background: linear-gradient(to bottom, rgba(220, 177, 102, 0.8), transparent);
+	animation: tick 2.4s ease-in-out infinite;
+}
+
+@keyframes tick {
+	0%, 100% { opacity: 0.25; transform: scaleY(0.5); }
+	50% { opacity: 1; transform: scaleY(1); }
+}
+
+.hint.gone { opacity: 0; }
+
+/* ---------- 进度条 ---------- */
+
+.progress {
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: 1.5px;
+	width: 0;
+	z-index: 6;
+	background: linear-gradient(90deg, rgba(220, 177, 102, 0), var(--gold));
+	transition: width 0.16s linear;
+}
+
+/* ---------- 移动端 ---------- */
+
+@media (max-width: 720px) {
+	.stop { align-items: flex-end; padding-bottom: 16vh; }
+	.info { max-width: none; }
+	.veil {
+		background:
+			linear-gradient(to top, rgba(5, 3, 10, 0.94) 8%, rgba(5, 3, 10, 0.6) 46%, rgba(5, 3, 10, 0) 72%),
+			radial-gradient(120% 60% at 50% -10%, rgba(5, 3, 10, 0.8), transparent 62%);
+	}
+	.rail { right: 10px; gap: 14px; }
+	.nav { gap: 14px; }
+	.quote { font-size: 12px; line-height: 1.95; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.info { transition: none; }
+	.hint-tick { animation: none; }
+	html { scroll-behavior: auto; }
+}
+
+.catlink { color: inherit; text-decoration: none; transition: opacity .25s; }
+.catlink:hover { opacity: .72; }

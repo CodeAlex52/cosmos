@@ -1,0 +1,53 @@
+---
+import { getCollection } from "astro:content";
+import "../../styles/archive.css";
+
+export async function getStaticPaths() {
+	const posts = await getCollection("posts");
+	const cats = [...new Set(posts.map((p) => p.data.category).filter(Boolean))] as string[];
+	return cats.map((c) => ({ params: { cat: c }, props: { cat: c } }));
+}
+
+const { cat } = Astro.props;
+const posts = (await getCollection("posts"))
+	.filter((p) => p.data.category === cat)
+	.sort((a, b) => b.data.published.getTime() - a.data.published.getTime());
+const fmt = (d: Date) => `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+	<title>{cat} · 苏哲的小宇宙</title>
+	<meta name="theme-color" content="#05030a" />
+	<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body class="post-body">
+	<div class="sky" aria-hidden="true"></div>
+	<div class="glow" aria-hidden="true"></div>
+
+	<header class="topbar">
+		<a class="brand" href="/">苏哲</a>
+		<nav class="nav"><a href="/archive/">归档</a><a href="/">星图</a></nav>
+	</header>
+
+	<main class="article arch">
+		<p class="eyebrow"><span>Category</span><span class="dot">·</span><span>{posts.length} 篇</span></p>
+		<h1>{cat}</h1>
+		<div class="rule"></div>
+
+		<ul class="list">
+			{posts.map((p) => (
+				<li>
+					<a href={`/posts/${p.id}/`}>
+						<span class="d">{fmt(p.data.published)}</span>
+						<span class="t">{p.data.title}</span>
+					</a>
+				</li>
+			))}
+		</ul>
+	</main>
+</body>
+</html>

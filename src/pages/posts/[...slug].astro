@@ -1,0 +1,76 @@
+---
+import { getCollection, render } from "astro:content";
+import "../../styles/post.css";
+
+export async function getStaticPaths() {
+	const posts = await getCollection("posts");
+	return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+const d = post.data.published;
+const date = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+
+const posts = await getCollection("posts");
+const idx = posts.findIndex((p) => p.id === post.id);
+const prev = posts[idx - 1];
+const next = posts[idx + 1];
+---
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+	<title>{post.data.title} · 苏哲的小宇宙</title>
+	<meta name="theme-color" content="#05030a" />
+	{post.data.description && <meta name="description" content={post.data.description} />}
+	<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body class="post-body">
+	<div class="sky" aria-hidden="true"></div>
+	<div class="glow" aria-hidden="true"></div>
+
+	<header class="topbar">
+		<a class="brand" href="/">苏哲</a>
+		<nav class="nav">
+			<a href="/archive/">归档</a>
+			<a href="/">回到星图</a>
+		</nav>
+	</header>
+
+	<article class="article">
+		<p class="eyebrow">
+			{post.data.category && <span>{post.data.category}</span>}
+			<span class="dot">·</span>
+			<span>{date}</span>
+		</p>
+
+		<h1>{post.data.title}</h1>
+
+		{post.data.description && <p class="sub">{post.data.description}</p>}
+
+		{post.data.tags?.length > 0 && (
+			<div class="tagrow">
+				{post.data.tags.map((t) => <span class="chip">{t}</span>)}
+			</div>
+		)}
+
+		<div class="rule"></div>
+
+		<div class="prose">
+			<Content />
+		</div>
+
+		<footer class="foot">
+			<div class="foot-links">
+				{prev && <a href={`/posts/${prev.id}/`}>← {prev.data.title}</a>}
+				{next && <a class="right" href={`/posts/${next.id}/`}>{next.data.title} →</a>}
+			</div>
+			<a class="back" href="/">回到星图</a>
+		</footer>
+	</article>
+</body>
+</html>
