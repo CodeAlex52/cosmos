@@ -22,7 +22,7 @@ export async function GET(context) {
 	const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 	<channel>
-		<title>苏哲的小宇宙</title>
+		<title>Alex 的小宇宙</title>
 		<description>把好奇心写进星光里</description>
 		<link>${context.site}</link>
 		<atom:link href="${new URL("/rss.xml", context.site).href}" rel="self" type="application/rss+xml" />

@@ -1,22 +1,10 @@
-/* ---- 文章页：深空阅读 ---- */
-:root {
-	--bg: #05030a;
-	--ink: #ece7f2;
-	--dim: #9b93a8;
-	--faint: #6c6479;
-	--gold: #e8c07a;
-	--line: rgba(232, 192, 122, 0.16);
-	--sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
-	--serif: "Songti SC", "SimSun", "Noto Serif CJK SC", Georgia, serif;
-	--mono: "SF Mono", "JetBrains Mono", Menlo, monospace;
-}
-
+@import "./tokens.css";
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { scroll-behavior: smooth; }
 
 body.post-body {
-	background: var(--bg);
+	background: var(--void);
 	color: var(--ink);
 	font-family: var(--sans);
 	-webkit-font-smoothing: antialiased;
@@ -324,15 +312,6 @@ h1 {
 }
 
 /* ---------- 白昼 ---------- */
-html[data-theme="light"] {
-	--bg: #efe9dd;
-	--ink: #1b2430;
-	--dim: #4b5563;
-	--faint: #85899a;
-	--gold: #96682c;
-	--line: rgba(150, 104, 44, 0.2);
-}
-
 html[data-theme="light"] .sky {
 	filter: invert(1);
 	opacity: .5;

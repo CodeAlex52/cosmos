@@ -1,12 +1,4 @@
-:root {
-	--void: #05030a;
-	--ink: #f1ecf8;
-	--dim: #a89cbe;
-	--faint: #6b607f;
-	--gold: #dcb166;
-	--sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
-	--serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", Georgia, serif;
-}
+@import "./tokens.css";
 
 * { box-sizing: border-box; }
 
@@ -314,14 +306,6 @@ h2 { font-size: clamp(28px, 3.8vw, 48px); }
 .catlink:hover { opacity: .72; }
 
 /* ---------- 白昼（宣纸星图） ---------- */
-html[data-theme="light"] {
-	--void: #efe9dd;
-	--ink: #1b2430;
-	--dim: #4b5563;
-	--faint: #85899a;
-	--gold: #96682c;
-}
-
 html[data-theme="light"] .veil {
 	background:
 		linear-gradient(100deg, rgba(239, 233, 221, 0.84) 0%, rgba(239, 233, 221, 0.46) 30%, rgba(239, 233, 221, 0) 58%),

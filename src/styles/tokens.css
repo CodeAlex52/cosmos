@@ -1,0 +1,29 @@
+/* 全站唯一色板：夜间深空 / 白昼宣纸 */
+:root {
+	--void: #05030a;
+	--card: #0d0a14;
+	--ink: #eee9f4;
+	--ink-strong: #f7f3fb;
+	--dim: #a49ab4;
+	--faint: #6e6480;
+	--gold: #dcb166;
+	--gold-hi: #f0cd8a;
+	--line: rgba(220, 177, 102, 0.16);
+	--line-soft: rgba(255, 255, 255, 0.07);
+	--sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+	--serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", Georgia, serif;
+	--mono: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+html[data-theme="light"] {
+	--void: #efe9dd;
+	--card: #f6f1e7;
+	--ink: #1b2430;
+	--ink-strong: #0f1720;
+	--dim: #4b5563;
+	--faint: #85899a;
+	--gold: #96682c;
+	--gold-hi: #7a5222;
+	--line: rgba(150, 104, 44, 0.2);
+	--line-soft: rgba(27, 36, 48, 0.1);
+}
