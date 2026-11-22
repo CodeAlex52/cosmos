@@ -1,5 +1,5 @@
 /**
- * sky.js — 内页与 404 交互式高分屏 Canvas2D 宇宙画布
+ * sky.js — 内页与 404 交互式高分屏 Canvas2D 宇宙画布（低功耗自适应节流版）
  * mode="constellation"：深度视差星空 + 光标交互金色星座连线 + 偶发流星 + 宣纸墨点模式
  * mode="blackhole"：404 交互式引力透镜吸积盘黑洞（白昼转为禅意圆相墨圈）
  */
@@ -16,21 +16,41 @@ if (canvas) {
 	let isLight = document.documentElement.dataset.theme === "light";
 	const pointer = { x: -9999, y: -9999, active: false };
 	const pointerEase = { x: 0, y: 0 };
+	let lastActivity = performance.now();
+
+	function drawOnce() {
+		const now = performance.now();
+		if (mode === "blackhole") renderBlackhole(now, 0.016);
+		else renderConstellation(now, 0.016);
+	}
 
 	function resize() {
-		DPR = Math.min(window.devicePixelRatio || 1, 2);
+		DPR = Math.min(window.devicePixelRatio || 1, 1.5);
 		W = Math.max(1, window.innerWidth);
 		H = Math.max(1, window.innerHeight);
 		canvas.width = Math.floor(W * DPR);
 		canvas.height = Math.floor(H * DPR);
 		ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+		lastActivity = performance.now();
+		if (reducedMotion) drawOnce();
 	}
 	window.addEventListener("resize", resize, { passive: true });
 	resize();
 
 	window.addEventListener("cosmos:theme", (e) => {
 		isLight = e.detail?.theme === "light";
+		lastActivity = performance.now();
+		if (reducedMotion) drawOnce();
 	});
+
+	window.addEventListener(
+		"scroll",
+		() => {
+			lastActivity = performance.now();
+			if (reducedMotion) drawOnce();
+		},
+		{ passive: true },
+	);
 
 	window.addEventListener(
 		"pointermove",
@@ -38,6 +58,7 @@ if (canvas) {
 			pointer.x = e.clientX;
 			pointer.y = e.clientY;
 			pointer.active = true;
+			lastActivity = performance.now();
 		},
 		{ passive: true },
 	);
@@ -50,24 +71,30 @@ if (canvas) {
 		{ passive: true },
 	);
 
-	// 粒子初始化
-	const stars = Array.from({ length: mode === "blackhole" ? 130 : 105 }, () => ({
-		x: Math.random(),
-		y: Math.random(),
-		depth: 0.2 + Math.random() * 0.85,
-		r: 0.6 + Math.pow(Math.random(), 2.2) * 2.0,
-		phase: Math.random() * Math.PI * 2,
-		speed: 0.8 + Math.random() * 1.4,
-		warm: Math.random(),
-	}));
+	// 预计算星点颜色前缀，减少每帧字符串拼接
+	const stars = Array.from({ length: mode === "blackhole" ? 115 : 96 }, () => {
+		const warm = Math.random();
+		const r = Math.round(215 + warm * 40);
+		const g = Math.round(210 + warm * 22);
+		const b = Math.round(255 - warm * 45);
+		return {
+			x: Math.random(),
+			y: Math.random(),
+			depth: 0.2 + Math.random() * 0.85,
+			r: 0.6 + Math.pow(Math.random(), 2.2) * 2.0,
+			phase: Math.random() * Math.PI * 2,
+			speed: 0.8 + Math.random() * 1.4,
+			nightPrefix: `rgba(${r},${g},${b},`,
+		};
+	});
 
 	const disk =
 		mode === "blackhole"
-			? Array.from({ length: 280 }, (_, i) => {
+			? Array.from({ length: 240 }, (_, i) => {
 					const t = Math.pow(Math.random(), 0.72);
 					return {
 						r: 68 + t * 210,
-						ang: (i / 280) * Math.PI * 2 + Math.random() * 0.6,
+						ang: (i / 240) * Math.PI * 2 + Math.random() * 0.6,
 						spd: (0.42 + Math.random() * 0.25) / (0.35 + t * 1.4),
 						size: 0.8 + Math.random() * 2.1,
 						alpha: 0.22 + (1 - t) * 0.65,
@@ -77,14 +104,16 @@ if (canvas) {
 				})
 			: [];
 
+	const nearPts = [];
+	const allPts = [];
 	let shoot = null;
 	let shootCooldown = 2.5;
 
 	function renderConstellation(now, dt) {
 		ctx.clearRect(0, 0, W, H);
 		const scroll = window.scrollY || 0;
+		allPts.length = 0;
 
-		const pts = [];
 		for (let i = 0; i < stars.length; i++) {
 			const s = stars[i];
 			const x = s.x * W;
@@ -93,49 +122,50 @@ if (canvas) {
 			const tw = reducedMotion ? 0.75 : 0.45 + 0.55 * Math.sin(now * 0.0014 * s.speed + s.phase);
 			const alpha = (0.18 + s.depth * 0.52) * tw;
 
-			if (isLight) {
-				ctx.fillStyle = `rgba(38, 46, 58, ${(alpha * 0.48).toFixed(3)})`;
-			} else {
-				const r = Math.round(215 + s.warm * 40);
-				const g = Math.round(210 + s.warm * 22);
-				const b = Math.round(255 - s.warm * 45);
-				ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
-			}
+			ctx.fillStyle = isLight
+				? `rgba(38,46,58,${(alpha * 0.48).toFixed(3)})`
+				: `${s.nightPrefix}${alpha.toFixed(3)})`;
 			ctx.beginPath();
 			ctx.arc(x, y, s.r, 0, Math.PI * 2);
 			ctx.fill();
 
-			if (s.depth > 0.42) pts.push({ x, y });
+			if (s.depth > 0.42) allPts.push({ x, y });
 		}
 
-		// 光标交互星座连线
+		// 光标交互星座连线（平方距离初筛，减少 sqrt 调用）
 		if (pointer.active && !reducedMotion) {
 			const maxD = 150;
-			const near = [];
-			for (let i = 0; i < pts.length; i++) {
-				const dx = pts[i].x - pointer.x;
-				const dy = pts[i].y - pointer.y;
-				const d = Math.hypot(dx, dy);
-				if (d < maxD) near.push({ x: pts[i].x, y: pts[i].y, d });
+			const maxD2 = maxD * maxD;
+			const pairMaxD2 = 105 * 105;
+			nearPts.length = 0;
+
+			for (let i = 0; i < allPts.length; i++) {
+				const dx = allPts[i].x - pointer.x;
+				const dy = allPts[i].y - pointer.y;
+				const d2 = dx * dx + dy * dy;
+				if (d2 < maxD2) nearPts.push({ x: allPts[i].x, y: allPts[i].y, d: Math.sqrt(d2) });
 			}
 
 			ctx.lineWidth = 0.85;
-			for (let i = 0; i < near.length; i++) {
-				const a = (1 - near[i].d / maxD) * (isLight ? 0.22 : 0.34);
-				ctx.strokeStyle = isLight ? `rgba(150, 104, 44, ${a.toFixed(3)})` : `rgba(220, 177, 102, ${a.toFixed(3)})`;
+			const linePrefix = isLight ? "rgba(150,104,44," : "rgba(220,177,102,";
+			for (let i = 0; i < nearPts.length; i++) {
+				const a = (1 - nearPts[i].d / maxD) * (isLight ? 0.22 : 0.34);
+				ctx.strokeStyle = `${linePrefix}${a.toFixed(3)})`;
 				ctx.beginPath();
 				ctx.moveTo(pointer.x, pointer.y);
-				ctx.lineTo(near[i].x, near[i].y);
+				ctx.lineTo(nearPts[i].x, nearPts[i].y);
 				ctx.stroke();
 
-				for (let j = i + 1; j < near.length; j++) {
-					const sd = Math.hypot(near[i].x - near[j].x, near[i].y - near[j].y);
-					if (sd < 105) {
-						const sa = (1 - sd / 105) * (isLight ? 0.14 : 0.22);
-						ctx.strokeStyle = isLight ? `rgba(150, 104, 44, ${sa.toFixed(3)})` : `rgba(220, 177, 102, ${sa.toFixed(3)})`;
+				for (let j = i + 1; j < nearPts.length; j++) {
+					const sx = nearPts[i].x - nearPts[j].x;
+					const sy = nearPts[i].y - nearPts[j].y;
+					const sd2 = sx * sx + sy * sy;
+					if (sd2 < pairMaxD2) {
+						const sa = (1 - Math.sqrt(sd2) / 105) * (isLight ? 0.14 : 0.22);
+						ctx.strokeStyle = `${linePrefix}${sa.toFixed(3)})`;
 						ctx.beginPath();
-						ctx.moveTo(near[i].x, near[i].y);
-						ctx.lineTo(near[j].x, near[j].y);
+						ctx.moveTo(nearPts[i].x, nearPts[i].y);
+						ctx.lineTo(nearPts[j].x, nearPts[j].y);
 						ctx.stroke();
 					}
 				}
@@ -170,11 +200,11 @@ if (canvas) {
 					const ty = shoot.y - shoot.vy * 0.12;
 					const grad = ctx.createLinearGradient(shoot.x, shoot.y, tx, ty);
 					if (isLight) {
-						grad.addColorStop(0, `rgba(150, 104, 44, ${a.toFixed(3)})`);
-						grad.addColorStop(1, "rgba(150, 104, 44, 0)");
+						grad.addColorStop(0, `rgba(150,104,44,${a.toFixed(3)})`);
+						grad.addColorStop(1, "rgba(150,104,44,0)");
 					} else {
-						grad.addColorStop(0, `rgba(242, 210, 148, ${a.toFixed(3)})`);
-						grad.addColorStop(1, "rgba(138, 184, 242, 0)");
+						grad.addColorStop(0, `rgba(242,210,148,${a.toFixed(3)})`);
+						grad.addColorStop(1, "rgba(138,184,242,0)");
 					}
 					ctx.strokeStyle = grad;
 					ctx.lineWidth = 1.4;
@@ -191,14 +221,14 @@ if (canvas) {
 		ctx.clearRect(0, 0, W, H);
 		const targetX = pointer.active ? (pointer.x - W / 2) * 0.08 : 0;
 		const targetY = pointer.active ? (pointer.y - H / 2) * 0.08 : 0;
-		pointerEase.x += (targetX - pointerEase.x) * 0.06;
-		pointerEase.y += (targetY - pointerEase.y) * 0.06;
+		const k = 1 - Math.exp(-4.0 * dt);
+		pointerEase.x += (targetX - pointerEase.x) * k;
+		pointerEase.y += (targetY - pointerEase.y) * k;
 
 		const cx = W * 0.5 + pointerEase.x;
 		const cy = H * 0.34 + pointerEase.y;
 		const horizonR = Math.min(W, H) < 560 ? 48 : 64;
 
-		// 引力透镜弯曲的背景星点
 		for (let i = 0; i < stars.length; i++) {
 			const s = stars[i];
 			let sx = s.x * W;
@@ -213,14 +243,13 @@ if (canvas) {
 			}
 			const tw = reducedMotion ? 0.8 : 0.5 + 0.5 * Math.sin(now * 0.0015 + s.phase);
 			ctx.fillStyle = isLight
-				? `rgba(27, 36, 48, ${(0.28 * tw).toFixed(3)})`
-				: `rgba(225, 220, 245, ${(0.45 * tw).toFixed(3)})`;
+				? `rgba(27,36,48,${(0.28 * tw).toFixed(3)})`
+				: `rgba(225,220,245,${(0.45 * tw).toFixed(3)})`;
 			ctx.beginPath();
 			ctx.arc(sx, sy, s.r, 0, Math.PI * 2);
 			ctx.fill();
 		}
 
-		// 外围吸积盘晕光
 		const halo = ctx.createRadialGradient(cx, cy, horizonR * 0.85, cx, cy, horizonR * 3.8);
 		if (isLight) {
 			halo.addColorStop(0, "rgba(150, 104, 44, 0.22)");
@@ -236,7 +265,6 @@ if (canvas) {
 		ctx.arc(cx, cy, horizonR * 3.8, 0, Math.PI * 2);
 		ctx.fill();
 
-		// 旋转吸积盘粒子
 		const rotTilt = -0.22;
 		const cosT = Math.cos(rotTilt), sinT = Math.sin(rotTilt);
 		for (let i = 0; i < disk.length; i++) {
@@ -250,20 +278,19 @@ if (canvas) {
 			if (isLight) {
 				ctx.fillStyle =
 					p.warm > 0.72
-						? `rgba(150, 104, 44, ${(p.alpha * 0.72).toFixed(3)})`
-						: `rgba(27, 36, 48, ${(p.alpha * 0.55).toFixed(3)})`;
+						? `rgba(150,104,44,${(p.alpha * 0.72).toFixed(3)})`
+						: `rgba(27,36,48,${(p.alpha * 0.55).toFixed(3)})`;
 			} else {
 				ctx.fillStyle =
 					p.warm > 0.4
-						? `rgba(242, 205, 138, ${p.alpha.toFixed(3)})`
-						: `rgba(165, 198, 255, ${(p.alpha * 0.8).toFixed(3)})`;
+						? `rgba(242,205,138,${p.alpha.toFixed(3)})`
+						: `rgba(165,198,255,${(p.alpha * 0.8).toFixed(3)})`;
 			}
 			ctx.beginPath();
 			ctx.arc(px, py, p.size, 0, Math.PI * 2);
 			ctx.fill();
 		}
 
-		// 事件视界黑洞核 / 白昼宣纸禅意圆相
 		ctx.save();
 		ctx.beginPath();
 		ctx.arc(cx, cy, horizonR, 0, Math.PI * 2);
@@ -275,13 +302,45 @@ if (canvas) {
 		ctx.restore();
 	}
 
-	let last = performance.now();
-	function frame(now) {
-		requestAnimationFrame(frame);
-		const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
-		last = now;
-		if (mode === "blackhole") renderBlackhole(now, dt);
-		else renderConstellation(now, dt);
+	if (reducedMotion) {
+		drawOnce();
+	} else {
+		let last = performance.now();
+		let lastDraw = last;
+		let rafId = null;
+
+		function frame(now) {
+			if (document.hidden) {
+				rafId = null;
+				return;
+			}
+			rafId = requestAnimationFrame(frame);
+
+			const isActive = now - lastActivity < 1500 || !!shoot;
+			const minGap = isActive ? 16.0 : mode === "blackhole" ? 32.0 : 41.0;
+			if (now - lastDraw < minGap) return;
+			lastDraw = now;
+
+			const dt = Math.min(0.06, Math.max(0.001, (now - last) / 1000));
+			last = now;
+			if (mode === "blackhole") renderBlackhole(now, dt);
+			else renderConstellation(now, dt);
+		}
+
+		document.addEventListener("visibilitychange", () => {
+			if (document.hidden) {
+				if (rafId) {
+					cancelAnimationFrame(rafId);
+					rafId = null;
+				}
+			} else {
+				last = performance.now();
+				lastDraw = 0;
+				lastActivity = last;
+				if (!rafId) rafId = requestAnimationFrame(frame);
+			}
+		});
+
+		rafId = requestAnimationFrame(frame);
 	}
-	requestAnimationFrame(frame);
 }

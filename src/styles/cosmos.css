@@ -113,8 +113,6 @@ html[data-theme="light"] .veil {
 	border-radius: 9px;
 	background: var(--glass);
 	border: 1px solid var(--line-soft);
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
 	box-shadow: var(--shadow-elev);
 	max-width: 220px;
 	transition: border-color 0.25s, background 0.25s, transform 0.3s var(--ease-expo);
@@ -262,8 +260,6 @@ h2 { font-size: clamp(30px, 4vw, 50px); }
 	border-radius: 999px;
 	border: 1px solid var(--glass-border);
 	background: var(--glass);
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
 	color: var(--ink-strong);
 	font-size: 12.5px;
 	letter-spacing: 0.14em;
@@ -362,6 +358,13 @@ h2 { font-size: clamp(30px, 4vw, 50px); }
 }
 
 /* ---------- 看板实时分段预览组件 ---------- */
+.widget-link {
+	display: block;
+	text-decoration: none;
+	color: inherit;
+	cursor: pointer;
+}
+
 .board-widget {
 	margin: 22px 0 0;
 	padding: 15px 16px;
@@ -583,7 +586,6 @@ h2 { font-size: clamp(30px, 4vw, 50px); }
 	border-radius: 50%;
 	border: 1px solid var(--line);
 	background: var(--glass);
-	backdrop-filter: blur(10px);
 	display: grid;
 	place-items: center;
 	color: var(--gold-hi);
@@ -645,8 +647,6 @@ h2 { font-size: clamp(30px, 4vw, 50px); }
 	border-radius: 999px;
 	border: 1px solid var(--line-soft);
 	background: var(--glass);
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
 	color: var(--dim);
 	font-family: var(--mono);
 	font-size: 10px;
@@ -721,6 +721,7 @@ body.cinema-mode .cinema-btn {
 }
 
 .hint.gone { opacity: 0; }
+.hint.gone .hint-tick { animation: none; }
 
 .progress {
 	position: fixed;

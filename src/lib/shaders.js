@@ -13,7 +13,7 @@ void main() {
 }`;
 
 export const FS_NEBULA = `#version 300 es
-precision highp float;
+precision mediump float;
 
 in vec2 vUv;
 in vec2 vNdc;
@@ -58,7 +58,7 @@ float noise3(vec3 p) {
 	return mix(mix(nx00, nx10, f.y), mix(nx01, nx11, f.y), f.z);
 }
 
-float fbm(vec3 p) {
+float fbm3(vec3 p) {
 	float v = 0.0;
 	float a = 0.5;
 	mat3 rot = mat3(
@@ -66,18 +66,12 @@ float fbm(vec3 p) {
 		0.48,  0.64, -0.60,
 		0.36,  0.48,  0.80
 	);
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 3; i++) {
 		v += a * noise3(p);
-		p = rot * p * 2.06 + vec3(1.7, 9.2, 4.1);
+		p = rot * p * 2.08 + vec3(1.7, 9.2, 4.1);
 		a *= 0.5;
 	}
 	return v;
-}
-
-float hash21(vec2 p) {
-	p = fract(p * vec2(123.34, 456.21));
-	p += dot(p, p + 45.32);
-	return fract(p.x * p.y);
 }
 
 void main() {
@@ -86,37 +80,35 @@ void main() {
 		vNdc.x * uAspect * uTanHalfFov * uCamRight +
 		vNdc.y * uTanHalfFov * uCamUp
 	);
-
-	// ---- 夜间深空星云 ----
-	vec3 p = rd * 2.4 + vec3(uTime * 0.008, -uTime * 0.005, uTime * 0.004);
-	float q = fbm(p);
-	float neb = fbm(p * 1.45 + vec3(q * 1.5, -q * 1.2, q * 0.8));
 	float band = exp(-pow(rd.y * 2.2 + rd.x * 0.55 - 0.12, 2.0) * 3.8);
-	float dustCloud = smoothstep(0.32, 0.82, neb);
 
-	vec3 nightCol = vec3(0.014, 0.010, 0.030);
-	nightCol += uTintA * pow(dustCloud, 1.55) * (0.28 + 0.42 * band);
-	nightCol += uTintB * smoothstep(0.48, 0.92, q * neb) * (0.22 + 0.34 * band);
+	if (uDaylight < 0.5) {
+		// ---- 夜间深空星云（单分支 3-octave FBM）----
+		vec3 p = rd * 2.4 + vec3(uTime * 0.008, -uTime * 0.005, uTime * 0.004);
+		float q = fbm3(p);
+		float neb = fbm3(p * 1.45 + vec3(q * 1.4, -q * 1.1, q * 0.8));
+		float dustCloud = smoothstep(0.30, 0.82, neb);
 
-	// 跃迁速度感微光
-	float radial = length(vNdc);
-	nightCol += mix(uTintA, vec3(0.7, 0.82, 1.0), 0.5) * uWarp * 0.06 * smoothstep(0.25, 1.2, radial);
+		vec3 nightCol = vec3(0.014, 0.010, 0.030);
+		nightCol += uTintA * pow(dustCloud, 1.5) * (0.30 + 0.44 * band);
+		nightCol += uTintB * smoothstep(0.46, 0.90, q * neb) * (0.24 + 0.36 * band);
 
-	// ---- 白昼宣纸水墨 ----
-	vec2 paperUv = vUv * vec2(uAspect, 1.0);
-	float fiberA = fbm(vec3(paperUv * 18.0, 1.2));
-	float fiberB = hash21(floor(vUv * 420.0));
-	float wash = fbm(vec3(rd.xy * 2.3 + vec2(0.0, uTime * 0.005), 3.7));
-	float inkWash = smoothstep(0.46, 0.84, wash) * (0.45 + 0.55 * band);
+		float radial = length(vNdc);
+		nightCol += mix(uTintA, vec3(0.7, 0.82, 1.0), 0.5) * uWarp * 0.06 * smoothstep(0.25, 1.2, radial);
+		fragColor = vec4(nightCol, 1.0);
+	} else {
+		// ---- 白昼宣纸水墨晕染（精细纸纹留给全分辨率合成 pass）----
+		vec2 paperUv = vUv * vec2(uAspect, 1.0);
+		float fiberA = fbm3(vec3(paperUv * 16.0, 1.2));
+		float wash = fbm3(vec3(rd.xy * 2.3 + vec2(0.0, uTime * 0.005), 3.7));
+		float inkWash = smoothstep(0.45, 0.83, wash) * (0.45 + 0.55 * band);
 
-	vec3 paperBase = vec3(0.937, 0.914, 0.863);
-	vec3 paperWarm = vec3(0.908, 0.878, 0.816);
-	vec3 dayCol = mix(paperWarm, paperBase, 0.5 + 0.5 * fiberA);
-	dayCol -= vec3(0.055, 0.048, 0.042) * inkWash;
-	dayCol += (fiberB - 0.5) * 0.014;
-
-	vec3 finalCol = mix(nightCol, dayCol, uDaylight);
-	fragColor = vec4(finalCol, 1.0);
+		vec3 paperBase = vec3(0.937, 0.914, 0.863);
+		vec3 paperWarm = vec3(0.908, 0.878, 0.816);
+		vec3 dayCol = mix(paperWarm, paperBase, 0.5 + 0.5 * fiberA);
+		dayCol -= vec3(0.055, 0.048, 0.042) * inkWash;
+		fragColor = vec4(dayCol, 1.0);
+	}
 }`;
 
 export const VS_STARS = `#version 300 es
@@ -144,6 +136,7 @@ uniform float uWaveRadius;
 uniform float uWaveStrength;
 uniform float uWarp;
 uniform float uIsStarfield;
+uniform float uMaxPointSize;
 
 out vec3 vColor;
 out float vAlpha;
@@ -192,19 +185,31 @@ void main() {
 		}
 	}
 
-	gl_Position = uViewProj * world;
-
 	float dist = max(length(world.xyz - uCam), 0.08);
-	float sizeBoost = 1.0 + clamp(flare * 0.48, 0.0, 0.9) + uWarp * 0.28;
-	float px = aSize * sizeBoost * uPointScale / dist;
-	gl_PointSize = clamp(px, 0.7, 108.0);
-
-	float tw = 1.0 - uTwinkle * (0.5 + 0.5 * sin(uTime * 1.85 + aMeta.x * 71.3));
 	float farFade = 1.0 - smoothstep(uRange.x, uRange.y, dist);
 	float nearFade = smoothstep(0.16, 1.12, dist);
+	float tw = 1.0 - uTwinkle * (0.5 + 0.5 * sin(uTime * 1.85 + aMeta.x * 71.3));
+	float alpha = uFade * tw * farFade * nearFade;
+
+	// 不可见粒子提前剔除，避免多余栅格化
+	if (alpha < 0.004) {
+		gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+		gl_PointSize = 0.0;
+		vAlpha = 0.0;
+		vColor = vec3(0.0);
+		vKind = 0.0;
+		vFlare = 0.0;
+		return;
+	}
+
+	gl_Position = uViewProj * world;
+
+	float sizeBoost = 1.0 + clamp(flare * 0.48, 0.0, 0.9) + uWarp * 0.28;
+	float px = aSize * sizeBoost * uPointScale / dist;
+	gl_PointSize = clamp(px, 0.7, uMaxPointSize);
 
 	vColor = aColor;
-	vAlpha = uFade * tw * farFade * nearFade;
+	vAlpha = alpha;
 	vKind = aMeta.z;
 	vFlare = flare;
 }`;
@@ -245,7 +250,8 @@ void main() {
 	if (uDaylight > 0.5) {
 		vec3 ink = mix(vec3(0.095, 0.105, 0.125), vColor * 0.54, 0.22);
 		ink = mix(ink, vec3(0.68, 0.36, 0.14), clamp(vFlare * 0.55, 0.0, 0.85));
-		fragColor = vec4(ink, clamp(v * 0.88, 0.0, 1.0));
+		float a = clamp(v * 0.88, 0.0, 1.0);
+		fragColor = vec4(ink * a, a);
 	} else {
 		vec3 col = mix(vColor, vec3(1.0, 0.93, 0.78), clamp(vFlare * 0.45 + core * 0.22, 0.0, 0.85));
 		float boost = 1.0 + vFlare * 0.85;
@@ -254,7 +260,7 @@ void main() {
 }`;
 
 export const FS_DUST = `#version 300 es
-precision highp float;
+precision mediump float;
 
 in vec3 vColor;
 in float vAlpha;
@@ -291,7 +297,7 @@ void main() {
 }`;
 
 export const FS_METEOR = `#version 300 es
-precision highp float;
+precision mediump float;
 
 in float vAlpha;
 in float vHead;
@@ -303,7 +309,8 @@ out vec4 fragColor;
 void main() {
 	if (uDaylight > 0.5) {
 		vec3 ink = mix(vec3(0.16, 0.17, 0.2), vec3(0.58, 0.34, 0.14), vHead);
-		fragColor = vec4(ink, vAlpha * 0.52);
+		float a = clamp(vAlpha * 0.52, 0.0, 1.0);
+		fragColor = vec4(ink * a, a);
 	} else {
 		vec3 tailCol = vec3(0.55, 0.78, 1.0);
 		vec3 headCol = vec3(1.0, 0.92, 0.72);
@@ -312,8 +319,9 @@ void main() {
 	}
 }`;
 
+// 硬件双线性插值 5-tap 高斯（等效 9-tap，无循环无 exp）
 export const FS_BLUR = `#version 300 es
-precision highp float;
+precision mediump float;
 
 in vec2 vUv;
 in vec2 vNdc;
@@ -325,15 +333,12 @@ uniform float uThreshold;
 out vec4 fragColor;
 
 void main() {
-	vec3 sum = vec3(0.0);
-	float wsum = 0.0;
-	for (int i = -4; i <= 4; i++) {
-		float w = exp(-float(i * i) / 7.5);
-		vec3 c = texture(uTex, vUv + uDir * float(i)).rgb;
-		sum += c * w;
-		wsum += w;
-	}
-	vec3 col = sum / wsum;
+	vec3 col =
+		texture(uTex, vUv).rgb * 0.22702703 +
+		texture(uTex, vUv + uDir * 1.38461538).rgb * 0.31621622 +
+		texture(uTex, vUv - uDir * 1.38461538).rgb * 0.31621622 +
+		texture(uTex, vUv + uDir * 3.23076923).rgb * 0.07027027 +
+		texture(uTex, vUv - uDir * 3.23076923).rgb * 0.07027027;
 
 	if (uThreshold > 0.0) {
 		float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
@@ -349,6 +354,7 @@ in vec2 vUv;
 in vec2 vNdc;
 
 uniform sampler2D uScene;
+uniform sampler2D uNebula;
 uniform sampler2D uBloomA;
 uniform sampler2D uBloomB;
 uniform float uBloomStrength;
@@ -369,48 +375,67 @@ vec3 aces(vec3 x) {
 	return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
 }
 
+float hash21(vec2 p) {
+	p = fract(p * vec2(123.34, 456.21));
+	p += dot(p, p + 45.32);
+	return fract(p.x * p.y);
+}
+
 void main() {
+	vec3 neb = texture(uNebula, vUv).rgb;
 	vec2 dir = vUv - 0.5;
 	float edgeDist = length(dir);
-	float caAmt = (uWarp * 0.0045 + uWaveStrength * 0.0032) * smoothstep(0.15, 0.85, edgeDist);
 
-	vec3 base;
-	if (caAmt > 0.0001 && uDaylight < 0.5) {
+	if (uDaylight >= 0.5) {
+		// 白昼宣纸全分辨率纤维微噪 + Porter-Duff 预乘墨迹合成
+		float fiberB = hash21(floor(vUv * 480.0));
+		neb += (fiberB - 0.5) * 0.015;
+
+		vec4 sc = texture(uScene, vUv);
+		vec3 base = sc.rgb + neb * (1.0 - clamp(sc.a, 0.0, 1.0));
+
+		vec2 p = dir * vec2(uResolution.x / max(uResolution.y, 1.0), 1.0);
+		float vigDay = 1.0 - smoothstep(0.62, 1.55, length(p)) * 0.08;
+		vec3 col = base * vigDay;
+
+		float n = fract(sin(dot(vUv * uResolution, vec2(12.9898, 78.233))) * 43758.5453);
+		col += (n - 0.5) * 0.008;
+
+		fragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+		return;
+	}
+
+	float caAmt = (uWarp * 0.0045 + uWaveStrength * 0.0032) * smoothstep(0.15, 0.85, edgeDist);
+	vec3 starCol;
+	if (caAmt > 0.0001) {
 		vec2 off = dir * caAmt;
 		float r = texture(uScene, clamp(vUv + off, 0.0, 1.0)).r;
 		float g = texture(uScene, vUv).g;
 		float b = texture(uScene, clamp(vUv - off, 0.0, 1.0)).b;
-		base = vec3(r, g, b);
+		starCol = vec3(r, g, b);
 	} else {
-		base = texture(uScene, vUv).rgb;
+		starCol = texture(uScene, vUv).rgb;
 	}
 
-	float nightMask = 1.0 - smoothstep(0.15, 0.75, uDaylight);
+	vec3 base = neb + starCol;
 	vec3 bloomTight = texture(uBloomA, vUv).rgb;
 	vec3 bloomWide = texture(uBloomB, vUv).rgb;
 
-	// 微妙的横向变形镜头柔光（只作用于高光中心带）
+	// 横向变形镜头高光带
 	vec3 anamorphic = (
 		texture(uBloomB, clamp(vUv + vec2(0.018, 0.0), 0.0, 1.0)).rgb +
 		texture(uBloomB, clamp(vUv - vec2(0.018, 0.0), 0.0, 1.0)).rgb
 	) * 0.16;
 
-	vec3 bloom = (bloomTight * 0.58 + bloomWide * 0.78 + anamorphic) * uBloomStrength * nightMask;
+	vec3 bloom = (bloomTight * 0.58 + bloomWide * 0.78 + anamorphic) * uBloomStrength;
 
-	// 暗角
-	vec2 p = (vUv - 0.5) * vec2(uResolution.x / max(uResolution.y, 1.0), 1.0);
+	vec2 p = dir * vec2(uResolution.x / max(uResolution.y, 1.0), 1.0);
 	float vigNight = 1.0 - smoothstep(0.58, 1.42, length(p)) * 0.42;
-	float vigDay = 1.0 - smoothstep(0.62, 1.55, length(p)) * 0.08;
 
-	vec3 col = (base + bloom) * mix(vigNight, vigDay, uDaylight);
+	vec3 col = aces((base + bloom) * vigNight * 1.15);
 
-	// 夜间采用 ACES 电影色调映射，白昼保持宣纸清润质感
-	vec3 nightMapped = aces(col * 1.15);
-	col = mix(nightMapped, col, uDaylight);
-
-	// 细腻胶片/宣纸微噪
 	float n = fract(sin(dot(vUv * uResolution + fract(uTime * 13.7), vec2(12.9898, 78.233))) * 43758.5453);
-	col += (n - 0.5) * mix(0.013, 0.008, uDaylight);
+	col += (n - 0.5) * 0.012;
 
 	fragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;

@@ -138,7 +138,16 @@ const cosmosDataJson = JSON.stringify(cosmosData).replace(/</g, "\\u003c");
 					<p class="latin" id="board-day">Day — / 30</p>
 					<p class="desc">日子自己往前走，格子自己会填。每一次微小节律，都在星图外默默推进。</p>
 
-					<div class="board-widget" data-spotlight data-tilt="off">
+					<a
+						class="board-widget widget-link"
+						id="fasting-widget"
+						href="https://board.664501775.workers.dev/#/item/fasting"
+						target="_blank"
+						rel="noopener"
+						data-spotlight
+						data-tilt="off"
+						data-cursor="DETAIL"
+					>
 						<div class="bw-top">
 							<span class="bw-name" id="bw-name">周期刻度</span>
 							<span class="bw-pct" id="bw-pct">SYNCING</span>
@@ -153,11 +162,20 @@ const cosmosDataJson = JSON.stringify(cosmosData).replace(/</g, "\\u003c");
 							<span id="bw-start">实时连接记录看板</span>
 							<span id="bw-remain">30 天一轮</span>
 						</div>
-					</div>
+					</a>
 
-					<div class="board-widget read-widget" id="read-widget" data-spotlight data-tilt="off">
+					<a
+						class="board-widget read-widget widget-link"
+						id="read-widget"
+						href="https://board.664501775.workers.dev/#/reading"
+						target="_blank"
+						rel="noopener"
+						data-spotlight
+						data-tilt="off"
+						data-cursor="READ"
+					>
 						<div class="rw-head">
-							<img class="rw-cover" id="rw-cover" alt="" width="32" height="44" />
+							<img class="rw-cover" id="rw-cover" alt="" width="32" height="44" referrerpolicy="no-referrer" />
 							<span class="rw-titles">
 								<span class="bw-name" id="rw-title">在读 · 连接中</span>
 								<span class="rw-sub" id="rw-sub">微信读书</span>
@@ -171,7 +189,7 @@ const cosmosDataJson = JSON.stringify(cosmosData).replace(/</g, "\\u003c");
 							<span id="rw-foot-l">—</span>
 							<span id="rw-foot-r">—</span>
 						</div>
-					</div>
+					</a>
 
 					<div class="spot-stack">
 						<a class="latest-card" href="https://board.664501775.workers.dev" target="_blank" rel="noopener" data-spotlight data-cursor="WARP">
@@ -291,6 +309,7 @@ const cosmosDataJson = JSON.stringify(cosmosData).replace(/</g, "\\u003c");
 	const nameEl = document.getElementById("bw-name");
 	const startEl = document.getElementById("bw-start");
 	const remainEl = document.getElementById("bw-remain");
+	const fastingLink = document.getElementById("fasting-widget") as HTMLAnchorElement | null;
 
 	if (dayEl) {
 		const tz = -new Date().getTimezoneOffset();
@@ -299,6 +318,7 @@ const cosmosDataJson = JSON.stringify(cosmosData).replace(/</g, "\\u003c");
 			.then((d) => {
 				const it = (d.items || []).find((i: any) => i.kind === "auto" && !i.archived);
 				if (!it) return;
+				if (fastingLink && it.id) fastingLink.href = `https://board.664501775.workers.dev/#/item/${encodeURIComponent(it.id)}`;
 				dayEl.textContent = `Day ${it.days} / ${it.target}`;
 				const ratio = Math.max(0, Math.min(1, Number(it.ratio || (it.days / Math.max(1, it.target)))));
 				if (nameEl) nameEl.textContent = it.name || "周期刻度";

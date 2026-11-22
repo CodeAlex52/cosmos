@@ -3,9 +3,9 @@
 	--void: #05030a;
 	--void-rgb: 5, 3, 10;
 	--card: #0d0a14;
-	--glass: rgba(13, 10, 22, 0.54);
-	--glass-hi: rgba(24, 19, 40, 0.72);
-	--glass-border: rgba(220, 177, 102, 0.2);
+	--glass: rgba(12, 9, 22, 0.78);
+	--glass-hi: rgba(20, 16, 36, 0.88);
+	--glass-border: rgba(220, 177, 102, 0.24);
 	--shadow-elev: 0 24px 64px -20px rgba(0, 0, 0, 0.78), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
 
 	--ink: #eee9f4;
@@ -34,9 +34,9 @@ html[data-theme="light"] {
 	--void: #efe9dd;
 	--void-rgb: 239, 233, 221;
 	--card: #f6f1e7;
-	--glass: rgba(246, 241, 231, 0.68);
-	--glass-hi: rgba(252, 248, 240, 0.86);
-	--glass-border: rgba(150, 104, 44, 0.24);
+	--glass: rgba(246, 241, 231, 0.88);
+	--glass-hi: rgba(252, 248, 240, 0.95);
+	--glass-border: rgba(150, 104, 44, 0.26);
 	--shadow-elev: 0 22px 54px -22px rgba(27, 36, 48, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.55) inset;
 
 	--ink: #1b2430;

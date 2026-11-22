@@ -100,8 +100,7 @@
 	width: 56px;
 	height: 56px;
 	margin: -28px 0 0 -28px;
-	background: rgba(var(--void-rgb), 0.62);
-	backdrop-filter: blur(4px);
+	background: rgba(var(--void-rgb), 0.78);
 }
 
 .celestial-cursor.is-hover.has-label .cc-label {
@@ -237,8 +236,6 @@
 	border-radius: 999px;
 	border: 1px solid var(--line-soft);
 	background: var(--glass);
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
 	color: var(--dim);
 	font-family: var(--mono);
 	font-size: 10.5px;
@@ -264,8 +261,6 @@
 	border-radius: 50%;
 	border: 1px solid var(--line-soft);
 	background: var(--glass);
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -317,8 +312,6 @@
 	border-radius: 50%;
 	border: 1px solid var(--line-soft);
 	background: var(--glass);
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
 	color: var(--ink);
 	display: grid;
 	place-items: center;
@@ -348,8 +341,6 @@ html[data-theme="light"] .tb-moon { display: block; }
 	position: relative;
 	background: var(--glass);
 	border: 1px solid var(--line-soft);
-	backdrop-filter: blur(14px);
-	-webkit-backdrop-filter: blur(14px);
 	box-shadow: var(--shadow-elev);
 	transition:
 		border-color 0.3s ease,
@@ -390,16 +381,20 @@ html[data-theme="light"] .tb-moon { display: block; }
 	place-items: start center;
 	padding: clamp(56px, 12vh, 120px) 16px 24px;
 	background: rgba(var(--void-rgb), 0.58);
-	backdrop-filter: blur(10px);
-	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+	visibility: hidden;
 	opacity: 0;
 	pointer-events: none;
-	transition: opacity 0.26s var(--ease-expo);
+	transition: opacity 0.26s var(--ease-expo), visibility 0.26s;
 }
 
 .cmd-overlay.is-open {
+	visibility: visible;
 	opacity: 1;
 	pointer-events: auto;
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
 }
 
 .cmd-dialog {
@@ -408,8 +403,6 @@ html[data-theme="light"] .tb-moon { display: block; }
 	border-radius: 14px;
 	border: 1px solid var(--glass-border);
 	background: var(--glass-hi);
-	backdrop-filter: blur(24px);
-	-webkit-backdrop-filter: blur(24px);
 	box-shadow: 0 36px 90px -24px rgba(0, 0, 0, 0.78), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 	overflow: hidden;
 	transform: translateY(10px) scale(0.985);
@@ -417,6 +410,8 @@ html[data-theme="light"] .tb-moon { display: block; }
 }
 
 .cmd-overlay.is-open .cmd-dialog {
+	backdrop-filter: blur(22px);
+	-webkit-backdrop-filter: blur(22px);
 	transform: translateY(0) scale(1);
 }
 

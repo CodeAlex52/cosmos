@@ -55,6 +55,22 @@ function initCursor() {
 	let visible = false;
 	let activeMag = null;
 	let hoverEl = null;
+	let rafId = null;
+
+	window.__cosmosCursorActive = () => rafId !== null;
+
+	function schedule() {
+		if (!rafId && visible && !document.hidden) {
+			rafId = requestAnimationFrame(tick);
+		}
+	}
+
+	function stopLoop() {
+		if (rafId) {
+			cancelAnimationFrame(rafId);
+			rafId = null;
+		}
+	}
 
 	function resolveLabel(node) {
 		if (!node) return "";
@@ -80,6 +96,7 @@ function initCursor() {
 				document.documentElement.classList.add("has-celestial-cursor");
 				el.classList.add("is-visible");
 			}
+			schedule();
 
 			const target = e.target?.closest?.(
 				"a, button, [data-cursor], [data-spotlight], .star-beacon, [data-lightbox-src]",
@@ -119,17 +136,30 @@ function initCursor() {
 	document.addEventListener("mouseleave", () => {
 		el.classList.remove("is-visible");
 		visible = false;
+		stopLoop();
+	});
+	document.addEventListener("visibilitychange", () => {
+		if (document.hidden) stopLoop();
 	});
 
 	function tick() {
-		requestAnimationFrame(tick);
-		if (!visible) return;
-		rx += (tx - rx) * 0.2;
-		ry += (ty - ry) * 0.2;
+		rafId = null;
+		if (!visible || document.hidden) return;
 		if (dot) dot.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+
+		const dx = tx - rx;
+		const dy = ty - ry;
+		if (Math.abs(dx) < 0.12 && Math.abs(dy) < 0.12) {
+			rx = tx;
+			ry = ty;
+			if (ring) ring.style.transform = `translate3d(${rx.toFixed(1)}px, ${ry.toFixed(1)}px, 0)`;
+			return;
+		}
+		rx += dx * 0.22;
+		ry += dy * 0.22;
 		if (ring) ring.style.transform = `translate3d(${rx.toFixed(1)}px, ${ry.toFixed(1)}px, 0)`;
+		rafId = requestAnimationFrame(tick);
 	}
-	requestAnimationFrame(tick);
 }
 
 initCursor();
