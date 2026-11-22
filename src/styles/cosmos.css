@@ -420,6 +420,62 @@ h2 { font-size: clamp(30px, 4vw, 50px); }
 	color: var(--faint);
 }
 
+/* 在读：和 16+8 共用一套进度条骨架，只多一行封面 */
+.read-widget { margin-top: 10px; }
+
+.read-widget .bw-bar { height: 10px; }
+
+.read-widget .bw-fill {
+	background: linear-gradient(90deg, rgba(var(--gold-rgb), 0.4), var(--gold-hi));
+}
+
+.rw-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.rw-cover {
+	width: 32px;
+	height: 44px;
+	object-fit: cover;
+	border-radius: 3px;
+	background: rgba(var(--void-rgb), 0.6);
+	border: 1px solid var(--line-soft);
+	flex: 0 0 auto;
+}
+
+.rw-cover:not([src]),
+.rw-cover[src=""] { visibility: hidden; }
+
+.rw-titles {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.rw-titles .bw-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rw-sub {
+	font-family: var(--mono);
+	font-size: 10.5px;
+	letter-spacing: 0.06em;
+	color: var(--faint);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.read-widget .bw-foot { gap: 14px; }
+.read-widget .bw-foot span:last-child { text-align: right; }
+
 /* ---------- 右侧精密星盘导轨 ---------- */
 .rail {
 	position: fixed;

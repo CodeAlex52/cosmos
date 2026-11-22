@@ -155,6 +155,24 @@ const cosmosDataJson = JSON.stringify(cosmosData).replace(/</g, "\\u003c");
 						</div>
 					</div>
 
+					<div class="board-widget read-widget" id="read-widget" data-spotlight data-tilt="off">
+						<div class="rw-head">
+							<img class="rw-cover" id="rw-cover" alt="" width="32" height="44" />
+							<span class="rw-titles">
+								<span class="bw-name" id="rw-title">在读 · 连接中</span>
+								<span class="rw-sub" id="rw-sub">微信读书</span>
+							</span>
+							<span class="bw-pct" id="rw-pct">—</span>
+						</div>
+						<div class="bw-bar" id="rw-bar">
+							<div class="bw-fill" id="rw-fill"></div>
+						</div>
+						<div class="bw-foot">
+							<span id="rw-foot-l">—</span>
+							<span id="rw-foot-r">—</span>
+						</div>
+					</div>
+
 					<div class="spot-stack">
 						<a class="latest-card" href="https://board.664501775.workers.dev" target="_blank" rel="noopener" data-spotlight data-cursor="WARP">
 							<span class="latest-left">
@@ -294,6 +312,46 @@ const cosmosDataJson = JSON.stringify(cosmosData).replace(/</g, "\\u003c");
 			})
 			.catch(() => {
 				if (pctEl) pctEl.textContent = "OFFLINE";
+			});
+	}
+
+	// 首页「记录」幕：微信读书的在读进度，数据和 16+8 并排
+	const rwTitle = document.getElementById("rw-title");
+	if (rwTitle) {
+		const rw = {
+			title: rwTitle,
+			sub: document.getElementById("rw-sub"),
+			pct: document.getElementById("rw-pct"),
+			fill: document.getElementById("rw-fill"),
+			cover: document.getElementById("rw-cover") as HTMLImageElement | null,
+			left: document.getElementById("rw-foot-l"),
+			right: document.getElementById("rw-foot-r"),
+		};
+		const hm = (min: number) => (min >= 60 ? `${Math.floor(min / 60)}h${String(min % 60).padStart(2, "0")}m` : `${min}m`);
+
+		fetch("https://reading.664501775.workers.dev/reading.json")
+			.then((r) => r.json())
+			.then((d: any) => {
+				if (!d?.ok) throw new Error(d?.error || "no data");
+				const book = (d.books || [])[0];
+				if (!book) {
+					if (rw.sub) rw.sub.textContent = "书架是空的";
+					if (rw.pct) rw.pct.textContent = "0%";
+					return;
+				}
+				if (rw.title) rw.title.textContent = `在读 · ${book.title}`;
+				if (rw.sub) rw.sub.textContent = `${book.author || "未知作者"} · 已读 ${hm(book.minutes || 0)}`;
+				if (rw.pct) rw.pct.textContent = `${book.progress}%`;
+				if (rw.fill) rw.fill.style.width = `${book.progress}%`;
+				if (rw.cover && book.cover) rw.cover.src = book.cover;
+				if (rw.left) rw.left.textContent = book.lastReadAt ? `最后读于 ${book.lastReadAt.slice(5).replace("-", ".")}` : "刚开始读";
+				if (rw.right) {
+					const week = d.week || {};
+					rw.right.textContent = [`本周 ${hm(week.minutes || 0)}`, week.rank].filter(Boolean).join(" · ");
+				}
+			})
+			.catch(() => {
+				if (rwTitle) rwTitle.textContent = "在读 · 暂时连不上";
 			});
 	}
 </script>

@@ -1,4 +1,6 @@
 ---
+workbench: true
+cover: covers/victorio.png
 title: 看了一年的 Victorio
 published: 2026-11-21
 pinned: false
